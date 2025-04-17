@@ -53,7 +53,7 @@ export function PaymentForm({ amount, bookingDetails }) {
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl
       } else {
-        \
+        
         throw new Error("No payment  {
         window.location.href = data.paymentUrl
       }
