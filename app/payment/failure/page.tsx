@@ -1,50 +1,39 @@
 import Link from "next/link"
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
 
-const messages = {
-  en: {
-    title: "Payment Failed",
-    description: "There was an issue with your payment",
-    failureReasons: [
-      "Insufficient funds",
-      "Card declined by your bank",
-      "Incorrect card information",
-      "Technical issues with the payment gateway"
-    ],
-    tryAgain: "Try Again",
-    contactSupport: "Contact Support"
-  },
-  ar: {
-    title: "فشلت عملية الدفع",
-    description: "كانت هناك مشكلة في الدفع الخاص بك",
-    failureReasons: [
-      "رصيد غير كافٍ",
-      "تم رفض البطاقة من قبل البنك",
-      "معلومات البطاقة غير صحيحة",
-      "مشاكل تقنية في بوابة الدفع"
-    ],
-    tryAgain: "حاول مرة أخرى",
-    contactSupport: "اتصل بالدعم"
-  }
+const message = {
+  title: "Payment Failed",
+  description: "There was an issue with your payment",
+  failureReasons: [
+    "Insufficient funds",
+    "Card declined by your bank",
+    "Incorrect card information",
+    "Technical issues with the payment gateway"
+  ],
+  tryAgain: "Try Again",
+  contactSupport: "Contact Support"
 }
 
 export default function PaymentFailurePage() {
-  const locale = "en" // Replace this with dynamic locale handling (user's locale or browser setting)
-  
-  const message = messages[locale] || messages["en"];
-
   return (
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
       <main className="flex-1">
         <PageHeader
-          title={message.title}  // Extracting the string for title
-          description={message.description}  // Extracting the string for description
+          title={message.title}
+          description={message.description}
         />
 
         <section className="w-full py-12 md:py-24 lg:py-32">
@@ -68,12 +57,12 @@ export default function PaymentFailurePage() {
                   Don't worry, your booking information is saved. You can try again or use an alternative payment method.
                 </p>
               </CardContent>
-              <CardFooter className="text-center">
-                <Button as={Link} href="/payment" className="w-full md:w-auto">
-                  {message.tryAgain}
+              <CardFooter className="flex flex-col md:flex-row justify-center gap-4">
+                <Button asChild className="w-full md:w-auto">
+                  <Link href="/payment">{message.tryAgain}</Link>
                 </Button>
-                <Button as={Link} href="/contact-support" className="w-full md:w-auto mt-4">
-                  {message.contactSupport}
+                <Button asChild className="w-full md:w-auto">
+                  <Link href="/contact-support">{message.contactSupport}</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -82,5 +71,5 @@ export default function PaymentFailurePage() {
       </main>
       <SiteFooter />
     </div>
-  );
+  )
 }
