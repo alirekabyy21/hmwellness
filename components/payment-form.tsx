@@ -45,27 +45,26 @@ export function PaymentForm({ amount, bookingDetails }) {
 
       const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || "Payment setup failed")
-      }
+if (!response.ok) {
+  throw new Error(data.error || "Payment setup failed");
+}
 
-      // Redirect to Kashier payment page
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl
-      } else {
-        
-        throw new Error("No payment  {
-        window.location.href = data.paymentUrl
-      }
-      else
-      throw new Error("No payment URL received")
-    } catch (error) {
-      setPaymentError(error.message)
-      setIsProcessing(false)
-    }
-  }
+// Redirect to Kashier payment page
+if (data.paymentUrl) {
+  window.location.href = data.paymentUrl;
+} else {
+  throw new Error("No payment URL received");
+}
 
-  return (
+} catch (error) {
+  setPaymentError(error.message);
+  setIsProcessing(false);
+}
+
+return (
+  // Your JSX code here
+);
+
     <div className="space-y-6">
       {paymentError && (
         <Alert variant="destructive">
