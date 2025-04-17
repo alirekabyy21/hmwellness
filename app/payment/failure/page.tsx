@@ -67,4 +67,20 @@ export default function PaymentFailurePage() {
                 <p>
                   Don't worry, your booking information is saved. You can try again or use an alternative payment method.
                 </p>
-              </
+              </CardContent>
+              <CardFooter className="text-center">
+                <Button as={Link} href="/payment" className="w-full md:w-auto">
+                  {message.tryAgain}
+                </Button>
+                <Button as={Link} href="/contact-support" className="w-full md:w-auto mt-4">
+                  {message.contactSupport}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
