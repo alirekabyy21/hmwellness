@@ -8,12 +8,16 @@ import { PageHeader } from "@/components/layout/page-header"
 import crypto from "crypto-js"
 
 export default function TestPaymentFormPage() {
-  const [merchantId, setMerchantId] = useState("")
-  const [apiKey, setApiKey] = useState("")
-  const [orderId, setOrderId] = useState("")
-  const [hash, setHash] = useState("")
+  const [merchantId, setMerchantId] = useState<string>("")
+  const [apiKey, setApiKey] = useState<string>("")
+  const [orderId, setOrderId] = useState<string>("")
+  const [hash, setHash] = useState<string>("")
+  const [isBrowser, setIsBrowser] = useState<boolean>(false)
 
   useEffect(() => {
+    // Ensure this is running in the browser (client-side)
+    setIsBrowser(typeof window !== "undefined")
+
     // Get Kashier credentials
     const merchantId = process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID || ""
     const apiKey = process.env.NEXT_PUBLIC_KASHIER_API_KEY || ""
@@ -33,6 +37,12 @@ export default function TestPaymentFormPage() {
       setHash(hash)
     }
   }, [])
+
+  const paymentLink = isBrowser
+    ? `https://payments.kashier.io/?merchantId=${merchantId}&orderId=${orderId}&amount=10&currency=EGP&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(
+        `${window.location.origin}/book/confirmation?orderId=${orderId}`
+      )}&display=en&type=external`
+    : ""
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -54,27 +64,21 @@ export default function TestPaymentFormPage() {
                 <div className="mb-6 p-4 bg-gray-100 rounded overflow-auto">
                   <pre className="text-xs">
                     {`<a
-  href="https://payments.kashier.io/?merchantId=${merchantId}&
-  orderId=${orderId}&
-  amount=10&
-  currency=EGP&
-  hash=${hash}&
-  mode=test&
-  merchantRedirect=${encodeURIComponent(`${window.location.origin}/book/confirmation?orderId=${orderId}`)}&
-  display=en&
-  type=external"
+  href="${paymentLink}"
 >
   Pay Now
 </a>`}
                   </pre>
                 </div>
 
-                <a
-                  href={`https://payments.kashier.io/?merchantId=${merchantId}&orderId=${orderId}&amount=10&currency=EGP&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(`${window.location.origin}/book/confirmation?orderId=${orderId}`)}&display=en&type=external`}
-                  className="inline-block bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
-                >
-                  Pay Now (10 EGP)
-                </a>
+                {isBrowser && (
+                  <a
+                    href={paymentLink}
+                    className="inline-block bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+                  >
+                    Pay Now (10 EGP)
+                  </a>
+                )}
               </div>
             </div>
           </div>
