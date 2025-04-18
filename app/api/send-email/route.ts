@@ -3,15 +3,31 @@ import nodemailer from "nodemailer"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("Email API route called")
+
     const body = await request.json()
     const { to, subject, html } = body
 
+    console.log("Email request received:", { to, subject, htmlLength: html?.length })
+
     if (!to || !subject || !html) {
+      console.error("Missing required fields:", { to, subject, htmlPresent: !!html })
       return NextResponse.json(
         { success: false, error: "Missing required fields: to, subject, or html" },
         { status: 400 },
       )
     }
+
+    // Log environment variables (without exposing sensitive data)
+    console.log("Email environment variables check:", {
+      hostPresent: !!process.env.EMAIL_SERVER_HOST,
+      portPresent: !!process.env.EMAIL_SERVER_PORT,
+      securePresent: !!process.env.EMAIL_SERVER_SECURE,
+      userPresent: !!process.env.EMAIL_SERVER_USER,
+      passwordPresent: !!process.env.EMAIL_SERVER_PASSWORD,
+      fromNamePresent: !!process.env.EMAIL_FROM_NAME,
+      fromAddressPresent: !!process.env.EMAIL_FROM_ADDRESS,
+    })
 
     // Create a transporter
     const transporter = nodemailer.createTransport({
@@ -22,10 +38,12 @@ export async function POST(request: NextRequest) {
         user: process.env.EMAIL_SERVER_USER,
         pass: process.env.EMAIL_SERVER_PASSWORD,
       },
+      debug: true, // Enable debug output
     })
 
     // Verify connection configuration
     try {
+      console.log("Verifying SMTP connection...")
       await transporter.verify()
       console.log("SMTP connection verified successfully")
     } catch (verifyError) {
@@ -38,8 +56,14 @@ export async function POST(request: NextRequest) {
 
     // Send the email
     try {
+      console.log("Sending email...")
+      const fromName = process.env.EMAIL_FROM_NAME || "HM Wellness"
+      const fromAddress = process.env.EMAIL_FROM_ADDRESS || "hello@hmwellness.com"
+
+      console.log(`Sending from: "${fromName}" <${fromAddress}>`)
+
       const info = await transporter.sendMail({
-        from: `"${process.env.EMAIL_FROM_NAME || "HM Wellness"}" <${process.env.EMAIL_FROM_ADDRESS || "hello@hmwellness.com"}>`,
+        from: `"${fromName}" <${fromAddress}>`,
         to,
         subject,
         html,
