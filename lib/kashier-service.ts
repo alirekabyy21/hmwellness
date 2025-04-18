@@ -37,7 +37,7 @@ export async function createPaymentSession(details: PaymentDetails): Promise<str
     const signature = crypto.createHmac("sha256", kashierConfig.apiKey).update(signatureString).digest("hex")
 
     // Use the test environment endpoint
-    const baseUrl = "https://checkout.kashier.io"
+    const baseUrl = "https://checkout.kashier.io/"
 
     // Construct the payment URL with all required parameters
     const paymentUrl = new URL(baseUrl)
