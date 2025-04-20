@@ -9,6 +9,9 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 
+// Mark the parent component as a Client Component
+"use client"
+
 export default function WorkshopsPage() {
   return (
     <div className="flex flex-col min-h-screen">
