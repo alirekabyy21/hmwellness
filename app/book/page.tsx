@@ -3,11 +3,9 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { addDays, format } from "date-fns"
 import { CalendarIcon, Check, ChevronLeft, ChevronRight, Clock, Globe } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
-import crypto from "crypto"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -26,6 +24,19 @@ import { createCalendarEvent } from "@/lib/google-calendar"
 import { sendEmail, generateConfirmationEmail } from "@/lib/email-service"
 import { detectUserLocationSimple } from "@/lib/location-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { SimpleConfirmation } from "./simple-confirmation"
+import { EmailFallback } from "./email-fallback"
+import { toast } from "@/components/ui/use-toast"
+
+const pricingConfig = {
+  egypt: {
+    regular: 600,
+    student: 400,
+  },
+  international: {
+    regular: 75,
+  },
+}
 
 export default function BookingPage() {
   const [date, setDate] = useState<Date | undefined>(undefined)
@@ -49,6 +60,8 @@ export default function BookingPage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>(bookingContent.timeSlots)
   const [meetingLink, setMeetingLink] = useState("")
   const [showPromoInfo, setShowPromoInfo] = useState(false)
+  const [showEmailFallback, setShowEmailFallback] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Detect user's location
   useEffect(() => {
@@ -111,22 +124,10 @@ export default function BookingPage() {
     return bookingContent.sessionPrice.egypt
   }
 
-  const getPriceValue = () => {
-    if (!userLocation.isEgypt) {
-      return 30 // International price in USD
-    }
-
-    // Apply student discount if promo code is valid
-    if (promoCodeValid) {
-      return 400 // Student price in EGP
-    }
-
-    return 600 // Regular price in EGP
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setPaymentError(null)
 
     try {
       // Create a unique order ID
@@ -155,150 +156,107 @@ export default function BookingPage() {
 
         setMeetingLink(calendarEvent.meetingLink)
 
-        // Create payment session
-        // Define the redirect URL - this is where Kashier will redirect after payment
-        const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
-
-        const paymentDetails = {
-          amount: getPriceValue(),
-          currency: userLocation.isEgypt ? "EGP" : "USD",
-          customerName: formData.name,
-          customerEmail: formData.email,
-          customerPhone: formData.phone,
-          description: `60-Minute Coaching Session with Hagar Moharam on ${format(date, "EEEE, MMMM d, yyyy")} at ${timeSlot}${promoCodeValid ? " (Student Discount)" : ""}`,
-          orderId: orderId,
-          redirectUrl: redirectUrl,
+        // Store booking details in session storage
+        const bookingDetails = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message,
+          date: date.toISOString(),
+          timeSlot,
+          meetingLink: calendarEvent.meetingLink,
+          calendarEventLink: calendarEvent.calendarEventLink,
+          orderId,
+          promoCodeApplied: promoCodeValid ? "Student Discount" : null,
         }
 
-        // Store booking details in session storage so we can retrieve them after payment
-        sessionStorage.setItem(
-          "bookingDetails",
-          JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            message: formData.message,
-            date: date.toISOString(),
+        sessionStorage.setItem("bookingDetails", JSON.stringify(bookingDetails))
+
+        // Try to send email
+        const emailSuccess = await sendEmail({
+          to: formData.email,
+          subject: "Your Coaching Session is Confirmed - HM Wellness",
+          html: generateConfirmationEmail(
+            formData.name,
+            "60-Minute Coaching Session",
+            format(date, "EEEE, MMMM d, yyyy"),
             timeSlot,
-            meetingLink: calendarEvent.meetingLink,
-            calendarEventLink: calendarEvent.calendarEventLink,
+            calendarEvent.meetingLink,
+            "",
+            calendarEvent.calendarEventLink,
+          ),
+        })
+
+        console.log("Email sending result:", emailSuccess)
+
+        // Create payment using the simplified API
+        const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
+
+        console.log("Creating payment with:", {
+          orderId,
+          customerName: formData.name,
+          customerEmail: formData.email,
+          amount: userLocation.isEgypt
+            ? promoCodeValid
+              ? pricingConfig.egypt.student
+              : pricingConfig.egypt.regular
+            : pricingConfig.international.regular,
+          currency: userLocation.isEgypt ? "EGP" : "USD",
+          redirectUrl,
+        })
+
+        const paymentResponse = await fetch("/api/payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             orderId,
-            promoCodeApplied: promoCodeValid ? "Student Discount" : null,
+            customerName: formData.name,
+            customerEmail: formData.email,
+            amount: userLocation.isEgypt
+              ? promoCodeValid
+                ? pricingConfig.egypt.student
+                : pricingConfig.egypt.regular
+              : pricingConfig.international.regular,
+            currency: userLocation.isEgypt ? "EGP" : "USD",
+            redirectUrl,
           }),
-        )
+        })
 
-        // Try to get payment URL from API
-        try {
-          const response = await fetch("/api/payment", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(paymentDetails),
-          })
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json()
+          console.error("Payment API error:", errorData)
+          throw new Error(`Payment API error: ${errorData.error || "Unknown error"}`)
+        }
 
-          const data = await response.json()
+        const paymentData = await paymentResponse.json()
+        console.log("Payment API response:", paymentData)
 
-          if (data.success && data.paymentUrl) {
-            // Send confirmation email
-            await sendEmail({
-              to: formData.email,
-              subject: "Your Coaching Session is Confirmed - HM Wellness",
-              html: generateConfirmationEmail(
-                formData.name,
-                "60-Minute Coaching Session",
-                format(date, "EEEE, MMMM d, yyyy"),
-                timeSlot,
-                calendarEvent.meetingLink,
-                data.paymentUrl,
-                calendarEvent.calendarEventLink,
-              ),
-            })
-
-            // Redirect to payment page
-            window.location.href = data.paymentUrl
-            return // Stop execution here as we're redirecting
-          } else {
-            throw new Error("Failed to create payment session")
-          }
-        } catch (apiError) {
-          console.error("API payment error:", apiError)
-
-          // Fallback to direct payment URL generation
-          const merchantId = process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
-          const apiKey = process.env.NEXT_PUBLIC_KASHIER_API_KEY
-
-          if (!merchantId || !apiKey) {
-            throw new Error("Missing Kashier credentials")
-          }
-
-          // Format amount to ensure it has 2 decimal places
-          const formattedAmount = Number(paymentDetails.amount).toFixed(2)
-
-          // Generate signature using HMAC-SHA256
-          // Format: merchantId + amount + currency + orderId
-          const signatureString = `${merchantId}${formattedAmount}${paymentDetails.currency}${paymentDetails.orderId}`
-
-          // Use HMAC-SHA256 with the secret key
-          const signature = crypto.createHmac("sha256", apiKey).update(signatureString).digest("hex")
-
-          // Use the test environment endpoint
-          const baseUrl = "https://checkout.kashier.io/"
-          const paymentUrl = new URL(baseUrl)
-
-          // Add required parameters
-          paymentUrl.searchParams.append("merchantId", merchantId)
-          paymentUrl.searchParams.append("amount", formattedAmount)
-          paymentUrl.searchParams.append("currency", paymentDetails.currency)
-          paymentUrl.searchParams.append("orderId", paymentDetails.orderId)
-          paymentUrl.searchParams.append("signature", signature)
-          paymentUrl.searchParams.append("redirectUrl", paymentDetails.redirectUrl)
-
-          // Add mode parameter for test environment
-          if (process.env.NODE_ENV !== "production") {
-            paymentUrl.searchParams.append("mode", "test")
-          }
-
-          // Add display language
-          paymentUrl.searchParams.append("display", "en")
-
-          // Add optional parameters
-          if (paymentDetails.description) {
-            paymentUrl.searchParams.append("description", paymentDetails.description.substring(0, 120))
-          }
-
-          const customerData = {
-            name: paymentDetails.customerName,
-            email: paymentDetails.customerEmail,
-            phone: paymentDetails.customerPhone || "",
-          }
-          paymentUrl.searchParams.append("customer", JSON.stringify(customerData))
-
-          // Send confirmation email
-          await sendEmail({
-            to: formData.email,
-            subject: "Your Coaching Session is Confirmed - HM Wellness",
-            html: generateConfirmationEmail(
-              formData.name,
-              "60-Minute Coaching Session",
-              format(date, "EEEE, MMMM d, yyyy"),
-              timeSlot,
-              calendarEvent.meetingLink,
-              paymentUrl.toString(),
-              calendarEvent.calendarEventLink,
-            ),
-          })
-
+        if (paymentData.success && paymentData.paymentUrl) {
           // Redirect to payment page
-          window.location.href = paymentUrl.toString()
-          return // Stop execution here as we're redirecting
+          window.location.href = paymentData.paymentUrl
+        } else {
+          throw new Error("Invalid payment response: " + JSON.stringify(paymentData))
         }
       }
     } catch (error) {
       console.error("Error booking appointment:", error)
-      // Don't set isBooked to true on error - this would show success message
-      // setIsBooked(true)
-    } finally {
+
+      // Set payment error message
+      setPaymentError((error as Error).message || "Failed to process payment. Please try again.")
+
+      // Only show email fallback if there's a payment error but the booking was created
+      if (meetingLink) {
+        setShowEmailFallback(true)
+      } else {
+        toast({
+          title: "Booking Error",
+          description: "There was an error processing your booking. Please try again or contact support.",
+          variant: "destructive",
+        })
+      }
+
       setIsSubmitting(false)
     }
   }
@@ -316,55 +274,13 @@ export default function BookingPage() {
         <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             {isBooked ? (
-              <Card className="mx-auto max-w-2xl bg-bg-light border-primary">
-                <CardHeader>
-                  <div className="mx-auto rounded-full bg-primary/20 p-3 mb-4">
-                    <Check className="h-8 w-8 text-primary" />
-                  </div>
-                  <CardTitle className="text-center text-2xl text-primary">Booking Confirmed!</CardTitle>
-                  <CardDescription className="text-center text-lg">
-                    Thank you for booking a session with Hagar Moharam.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-center">
-                  <p>
-                    We've sent a confirmation email to <span className="font-medium">{formData.email}</span>
-                  </p>
-                  <div className="rounded-lg border p-4 bg-white">
-                    <h3 className="font-medium text-primary">Booking Details</h3>
-                    <div className="mt-3 space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Service:</span>
-                        <span>60-Minute Coaching Session</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date:</span>
-                        <span>{date ? format(date, "PPP") : "Not selected"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time:</span>
-                        <span>{timeSlot}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Meeting Link:</span>
-                        <a
-                          href={meetingLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          Join Meeting
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button asChild className="w-full">
-                    <Link href="/">Return to Homepage</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+              <SimpleConfirmation
+                name={formData.name}
+                email={formData.email}
+                date={date ? format(date, "EEEE, MMMM d, yyyy") : ""}
+                timeSlot={timeSlot}
+                onClose={() => setIsBooked(false)}
+              />
             ) : (
               <Card className="mx-auto max-w-2xl border-primary/20 shadow-md">
                 <CardHeader>
@@ -410,6 +326,15 @@ export default function BookingPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {paymentError && (
+                    <Alert className="mb-4 bg-red-50 border-red-200 text-red-800">
+                      <AlertDescription>
+                        <p>{paymentError}</p>
+                        <p className="text-sm mt-1">Please try again or contact support for assistance.</p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <form onSubmit={handleSubmit}>
                     {step === 1 && (
                       <div className="space-y-4">
@@ -723,6 +648,16 @@ export default function BookingPage() {
             )}
           </div>
         </section>
+        {showEmailFallback && (
+          <EmailFallback
+            name={formData.name}
+            email={formData.email}
+            date={date ? format(date, "EEEE, MMMM d, yyyy") : ""}
+            timeSlot={timeSlot}
+            open={showEmailFallback}
+            onClose={() => setShowEmailFallback(false)}
+          />
+        )}
       </main>
       <SiteFooter />
     </div>

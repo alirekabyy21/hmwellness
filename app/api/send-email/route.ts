@@ -3,43 +3,61 @@ import nodemailer from "nodemailer"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("Email API route called")
+
     const body = await request.json()
     const { to, subject, html } = body
 
+    console.log("Email request received:", { to, subject, htmlLength: html?.length })
+
     if (!to || !subject || !html) {
+      console.error("Missing required fields:", { to, subject, htmlPresent: !!html })
       return NextResponse.json(
         { success: false, error: "Missing required fields: to, subject, or html" },
         { status: 400 },
       )
     }
 
-    // Create a transporter
+    // Log environment variables (without exposing sensitive data)
+    console.log("Email environment variables check:", {
+      hostPresent: !!process.env.EMAIL_SERVER_HOST,
+      portPresent: !!process.env.EMAIL_SERVER_PORT,
+      userPresent: !!process.env.EMAIL_SERVER_USER,
+      passwordPresent: !!process.env.EMAIL_SERVER_PASSWORD,
+      fromPresent: !!process.env.EMAIL_FROM,
+    })
+
+    // Create a transporter with the correct configuration
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_SERVER_HOST || "smtp.gmail.com",
-      port: Number.parseInt(process.env.EMAIL_SERVER_PORT || "587"),
-      secure: process.env.EMAIL_SERVER_SECURE === "true",
+      host: process.env.EMAIL_SERVER_HOST,
+      port: Number(process.env.EMAIL_SERVER_PORT),
+      secure: process.env.EMAIL_SERVER_PORT === "465", // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_SERVER_USER,
         pass: process.env.EMAIL_SERVER_PASSWORD,
       },
     })
 
-    // Verify connection configuration
-    try {
-      await transporter.verify()
-      console.log("SMTP connection verified successfully")
-    } catch (verifyError) {
-      console.error("SMTP connection verification failed:", verifyError)
-      return NextResponse.json(
-        { success: false, error: "Email server connection failed", details: verifyError },
-        { status: 500 },
-      )
-    }
-
     // Send the email
     try {
+      console.log("Sending email...")
+
+      // Parse the EMAIL_FROM value which is in the format "Name <email>"
+      let fromName = "HM Wellness"
+      let fromEmail = process.env.EMAIL_SERVER_USER
+
+      if (process.env.EMAIL_FROM) {
+        const matches = process.env.EMAIL_FROM.match(/"([^"]+)"\s+<([^>]+)>/)
+        if (matches && matches.length >= 3) {
+          fromName = matches[1]
+          fromEmail = matches[2]
+        }
+      }
+
+      console.log(`Sending from: "${fromName}" <${fromEmail}>`)
+
       const info = await transporter.sendMail({
-        from: `"${process.env.EMAIL_FROM_NAME || "HM Wellness"}" <${process.env.EMAIL_FROM_ADDRESS || "hello@hmwellness.com"}>`,
+        from: `"${fromName}" <${fromEmail}>`,
         to,
         subject,
         html,

@@ -1,61 +1,104 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createPaymentUrl, generateOrderId } from "@/lib/payment"
-import { pricingConfig } from "@/app/config"
+import crypto from "crypto"
+
+interface PaymentRequestBody {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  isEgypt: boolean
+  isStudent: boolean
+  redirectUrl: string
+}
+
+// Define pricing config directly in this file to avoid import issues
+const pricingConfig = {
+  egypt: {
+    regular: 600,
+    student: 400,
+    currency: "EGP",
+  },
+  international: {
+    regular: 30,
+    currency: "USD",
+  },
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { amount, customerData, promoCode, isInternational } = body
+    const body = (await request.json()) as PaymentRequestBody
+    const { orderId, customerName, customerEmail, isEgypt, isStudent, redirectUrl } = body
 
-    // Validate amount
-    if (!amount || isNaN(Number.parseFloat(amount)) || Number.parseFloat(amount) <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 })
+    // Get Kashier credentials - updated to match your environment variables
+    const merchantId = process.env.KASHIER_MERCHANT_ID
+    const secretKey = process.env.KASHIER_SECRET_KEY
+
+    if (!merchantId || !secretKey) {
+      console.error("Missing Kashier credentials:", { merchantIdExists: !!merchantId, secretKeyExists: !!secretKey })
+      return NextResponse.json({ success: false, error: "Missing Kashier credentials" }, { status: 500 })
     }
 
-    // Verify promo code if provided
-    let finalAmount = Number.parseFloat(amount)
-    let discountApplied = false
+    // Determine price and currency based on location and discount
+    const priceDetails = isEgypt
+      ? {
+          amount: isStudent ? pricingConfig.egypt.student : pricingConfig.egypt.regular,
+          currency: pricingConfig.egypt.currency,
+        }
+      : {
+          amount: pricingConfig.international.regular,
+          currency: pricingConfig.international.currency,
+        }
 
-    if (promoCode && promoCode === pricingConfig.studentPromo.code && !isInternational) {
-      // Verify the amount matches the expected discounted price
-      const expectedPrice = pricingConfig.tiers.egypt.regular - pricingConfig.studentPromo.discount
-      if (Math.abs(finalAmount - expectedPrice) > 0.01) {
-        // If there's a mismatch, use the correct discounted price
-        finalAmount = expectedPrice
-      }
-      discountApplied = true
-    } else if (isInternational) {
-      // For international clients, verify the amount matches the expected price
-      const expectedPrice = pricingConfig.international
-      if (Math.abs(finalAmount - expectedPrice) > 0.01) {
-        // If there's a mismatch, use the correct international price
-        finalAmount = expectedPrice
-      }
-    } else {
-      // For regular clients, verify the amount matches the expected price
-      const expectedPrice = pricingConfig.tiers.egypt.regular
-      if (Math.abs(finalAmount - expectedPrice) > 0.01) {
-        // If there's a mismatch, use the correct regular price
-        finalAmount = expectedPrice
-      }
+    // Format amount to ensure it has 2 decimal places
+    const formattedAmount = Number(priceDetails.amount).toFixed(2)
+
+    // Generate signature using HMAC-SHA256
+    // Format: merchantId + amount + currency + orderId
+    const signatureString = `${merchantId}${formattedAmount}${priceDetails.currency}${orderId}`
+
+    // Use HMAC-SHA256 with the secret key
+    const signature = crypto.createHmac("sha256", secretKey).update(signatureString).digest("hex")
+
+    // Create customer data
+    const customerData = {
+      name: customerName,
+      email: customerEmail,
     }
 
-    // Generate a unique order ID
-    const orderId = generateOrderId()
+    // Use the correct payment gateway URL from environment variable
+    const paymentGatewayUrl = process.env.NEXT_PUBLIC_PAYMENT_GATEWAY_URL || "https://checkout.kashier.io"
 
-    // Create payment URL
-    const paymentUrl = createPaymentUrl(orderId, finalAmount, customerData, isInternational ? "USD" : "EGP")
+    // Construct the payment URL
+    const paymentUrl = new URL(paymentGatewayUrl)
+
+    // Add required parameters
+    paymentUrl.searchParams.append("merchantId", merchantId)
+    paymentUrl.searchParams.append("amount", formattedAmount)
+    paymentUrl.searchParams.append("currency", priceDetails.currency)
+    paymentUrl.searchParams.append("orderId", orderId)
+    paymentUrl.searchParams.append("signature", signature)
+    paymentUrl.searchParams.append("redirectUrl", encodeURIComponent(redirectUrl))
+
+    // Add mode parameter for test environment
+    if (process.env.NODE_ENV !== "production") {
+      paymentUrl.searchParams.append("mode", "test")
+    }
+
+    // Add display language
+    paymentUrl.searchParams.append("display", "en")
+
+    // Add customer data
+    paymentUrl.searchParams.append("customer", JSON.stringify(customerData))
+
+    console.log("Generated payment URL:", paymentUrl.toString())
 
     return NextResponse.json({
       success: true,
-      orderId,
-      paymentUrl,
-      amount: finalAmount,
-      currency: isInternational ? "USD" : "EGP",
-      discountApplied,
+      paymentUrl: paymentUrl.toString(),
+      amount: priceDetails.amount,
+      currency: priceDetails.currency,
     })
   } catch (error) {
-    console.error("Payment creation error:", error)
-    return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
+    console.error("Error creating payment:", error)
+    return NextResponse.json({ success: false, error: "Failed to create payment" }, { status: 500 })
   }
 }

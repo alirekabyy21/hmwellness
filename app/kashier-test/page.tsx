@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import crypto from "crypto"
+import crypto from "crypto-js"
 
 export default function KashierTestPage() {
   const [paymentUrl, setPaymentUrl] = useState("")
@@ -38,7 +38,7 @@ export default function KashierTestPage() {
       const signatureString = `${merchantId}${amount}${currency}${orderId}`
 
       // Use HMAC-SHA256 with the secret key
-      const signature = crypto.createHmac("sha256", apiKey).update(signatureString).digest("hex")
+      const signature = crypto.HmacSHA256(signatureString, apiKey).toString()
 
       // Create the payment URL
       const url = new URL("https://checkout.kashier.io/")
@@ -69,6 +69,12 @@ export default function KashierTestPage() {
       setIsLoading(false)
     }
   }, [])
+
+  const handlePaymentClick = () => {
+    if (paymentUrl) {
+      window.location.href = paymentUrl
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -110,7 +116,7 @@ export default function KashierTestPage() {
               </CardContent>
               <CardFooter>
                 {!isLoading && !error && (
-                  <Button onClick={() => (window.location.href = paymentUrl)} className="w-full">
+                  <Button onClick={handlePaymentClick} className="w-full">
                     Proceed to Payment
                   </Button>
                 )}
