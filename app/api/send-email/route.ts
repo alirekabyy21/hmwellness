@@ -41,8 +41,6 @@ export async function POST(request: NextRequest) {
       debug: true, // Enable debug output
     })
 
-<<<<<<< HEAD
-=======
     // Verify connection configuration
     try {
       console.log("Verifying SMTP connection...")
@@ -56,7 +54,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
->>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
     // Send the email
     try {
       console.log("Sending email...")
