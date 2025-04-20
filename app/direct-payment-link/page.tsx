@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
-import crypto from "crypto"
+import crypto from "crypto-js"
 
 export default function DirectPaymentLinkPage() {
   const [merchantId, setMerchantId] = useState("")
@@ -13,6 +13,7 @@ export default function DirectPaymentLinkPage() {
   const [hash, setHash] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
+  const [redirectUrl, setRedirectUrl] = useState("")
 
   useEffect(() => {
     try {
@@ -33,19 +34,18 @@ export default function DirectPaymentLinkPage() {
 
       // Generate hash
       const hashString = `${amount}${currency}${orderId}${merchantId}${apiKey}`
-      const hash = crypto.createHash("sha256").update(hashString).digest("hex")
+      const hash = crypto.SHA256(hashString).toString()
 
       setMerchantId(merchantId)
       setOrderId(orderId)
       setHash(hash)
+      setRedirectUrl(`${window.location.origin}/book/confirmation?orderId=${orderId}`)
     } catch (err) {
       setError((err as Error).message)
     } finally {
       setIsLoading(false)
     }
   }, [])
-
-  const redirectUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/book/confirmation?orderId=${orderId}`
 
   return (
     <div className="flex flex-col min-h-screen">

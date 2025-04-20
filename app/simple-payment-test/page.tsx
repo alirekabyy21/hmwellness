@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import crypto from "crypto"
+import crypto from "crypto-js"
 
 export default function SimplePaymentTestPage() {
   const [paymentUrl, setPaymentUrl] = useState("")
@@ -34,7 +34,7 @@ export default function SimplePaymentTestPage() {
 
       // Generate hash
       const hashString = `${amount}${currency}${orderId}${merchantId}${apiKey}`
-      const hash = crypto.createHash("sha256").update(hashString).digest("hex")
+      const hash = crypto.SHA256(hashString).toString()
 
       // Create the payment URL exactly as in the Kashier documentation
       const url = `https://payments.kashier.io?merchantId=${merchantId}&orderId=${orderId}&amount=${amount}&currency=${currency}&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
@@ -46,6 +46,12 @@ export default function SimplePaymentTestPage() {
       setIsLoading(false)
     }
   }, [])
+
+  const handlePaymentClick = () => {
+    if (paymentUrl) {
+      window.location.href = paymentUrl
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -82,7 +88,7 @@ export default function SimplePaymentTestPage() {
               </CardContent>
               <CardFooter>
                 {!isLoading && !error && (
-                  <Button onClick={() => (window.location.href = paymentUrl)} className="w-full">
+                  <Button onClick={handlePaymentClick} className="w-full">
                     Proceed to Payment
                   </Button>
                 )}

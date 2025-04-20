@@ -366,3 +366,16 @@ export const arabicContent = {
     },
   },
 }
+
+// Pricing configuration for payment API
+export const pricingConfig = {
+  egypt: {
+    regular: 600,
+    student: 400,
+    currency: "EGP",
+  },
+  international: {
+    regular: 30,
+    currency: "USD",
+  },
+}

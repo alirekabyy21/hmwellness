@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
-import { pricingConfig } from "@/app/config"
 
 interface PaymentRequestBody {
   orderId: string
@@ -9,6 +8,19 @@ interface PaymentRequestBody {
   isEgypt: boolean
   isStudent: boolean
   redirectUrl: string
+}
+
+// Define pricing config directly in this file to avoid import issues
+const pricingConfig = {
+  egypt: {
+    regular: 600,
+    student: 400,
+    currency: "EGP",
+  },
+  international: {
+    regular: 30,
+    currency: "USD",
+  },
 }
 
 export async function POST(request: NextRequest) {

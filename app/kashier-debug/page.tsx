@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import crypto from "crypto"
+import crypto from "crypto-js"
 
 export default function KashierDebugPage() {
   const [merchantId, setMerchantId] = useState("")
@@ -39,7 +39,7 @@ export default function KashierDebugPage() {
       try {
         // Generate hash
         const hashString = `${amount}${currency}${orderId}${merchantId}${apiKey}`
-        const generatedHash = crypto.createHash("sha256").update(hashString).digest("hex")
+        const generatedHash = crypto.SHA256(hashString).toString()
         setHash(generatedHash)
 
         // Create payment URL
@@ -60,6 +60,12 @@ export default function KashierDebugPage() {
       }
     }
   }, [merchantId, apiKey, orderId, amount, currency, redirectUrl])
+
+  const handlePaymentClick = () => {
+    if (paymentUrl) {
+      window.location.href = paymentUrl
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -145,7 +151,7 @@ export default function KashierDebugPage() {
                         variant="outline"
                         onClick={() => {
                           const hashString = `${amount}${currency}${orderId}${merchantId}${apiKey}`
-                          const generatedHash = crypto.createHash("sha256").update(hashString).digest("hex")
+                          const generatedHash = crypto.SHA256(hashString).toString()
                           setHash(generatedHash)
                         }}
                       >
@@ -166,7 +172,7 @@ export default function KashierDebugPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => (window.location.href = paymentUrl)} disabled={!paymentUrl} className="w-full">
+                <Button onClick={handlePaymentClick} disabled={!paymentUrl} className="w-full">
                   Test Payment
                 </Button>
               </CardFooter>
