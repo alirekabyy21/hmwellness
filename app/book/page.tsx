@@ -26,6 +26,7 @@ import { detectUserLocationSimple } from "@/lib/location-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { SimpleConfirmation } from "./simple-confirmation"
 import { EmailFallback } from "./email-fallback"
+import { toast } from "@/components/ui/use-toast"
 
 export default function BookingPage() {
   const [date, setDate] = useState<Date | undefined>(undefined)
@@ -50,6 +51,7 @@ export default function BookingPage() {
   const [meetingLink, setMeetingLink] = useState("")
   const [showPromoInfo, setShowPromoInfo] = useState(false)
   const [showEmailFallback, setShowEmailFallback] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Detect user's location
   useEffect(() => {
@@ -115,6 +117,7 @@ export default function BookingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setPaymentError(null)
 
     try {
       // Create a unique order ID
@@ -144,24 +147,23 @@ export default function BookingPage() {
         setMeetingLink(calendarEvent.meetingLink)
 
         // Store booking details in session storage
-        sessionStorage.setItem(
-          "bookingDetails",
-          JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            message: formData.message,
-            date: date.toISOString(),
-            timeSlot,
-            meetingLink: calendarEvent.meetingLink,
-            calendarEventLink: calendarEvent.calendarEventLink,
-            orderId,
-            promoCodeApplied: promoCodeValid ? "Student Discount" : null,
-          }),
-        )
+        const bookingDetails = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message,
+          date: date.toISOString(),
+          timeSlot,
+          meetingLink: calendarEvent.meetingLink,
+          calendarEventLink: calendarEvent.calendarEventLink,
+          orderId,
+          promoCodeApplied: promoCodeValid ? "Student Discount" : null,
+        }
+
+        sessionStorage.setItem("bookingDetails", JSON.stringify(bookingDetails))
 
         // Try to send email
-        await sendEmail({
+        const emailSuccess = await sendEmail({
           to: formData.email,
           subject: "Your Coaching Session is Confirmed - HM Wellness",
           html: generateConfirmationEmail(
@@ -175,8 +177,19 @@ export default function BookingPage() {
           ),
         })
 
+        console.log("Email sending result:", emailSuccess)
+
         // Create payment using the API
         const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
+
+        console.log("Creating payment with:", {
+          orderId,
+          customerName: formData.name,
+          customerEmail: formData.email,
+          isEgypt: userLocation.isEgypt,
+          isStudent: promoCodeValid,
+          redirectUrl,
+        })
 
         const paymentResponse = await fetch("/api/payment/create", {
           method: "POST",
@@ -194,23 +207,38 @@ export default function BookingPage() {
         })
 
         if (!paymentResponse.ok) {
-          throw new Error("Failed to create payment")
+          const errorData = await paymentResponse.json()
+          console.error("Payment API error:", errorData)
+          throw new Error(`Payment API error: ${errorData.error || "Unknown error"}`)
         }
 
         const paymentData = await paymentResponse.json()
+        console.log("Payment API response:", paymentData)
 
         if (paymentData.success && paymentData.paymentUrl) {
           // Redirect to payment page
           window.location.href = paymentData.paymentUrl
         } else {
-          throw new Error("Invalid payment response")
+          throw new Error("Invalid payment response: " + JSON.stringify(paymentData))
         }
       }
     } catch (error) {
       console.error("Error booking appointment:", error)
-      // Show the fallback if there was an error
-      setIsBooked(true)
-      setShowEmailFallback(true)
+
+      // Set payment error message
+      setPaymentError((error as Error).message || "Failed to process payment. Please try again.")
+
+      // Only show email fallback if there's a payment error but the booking was created
+      if (meetingLink) {
+        setShowEmailFallback(true)
+      } else {
+        toast({
+          title: "Booking Error",
+          description: "There was an error processing your booking. Please try again or contact support.",
+          variant: "destructive",
+        })
+      }
+
       setIsSubmitting(false)
     }
   }
@@ -280,6 +308,15 @@ export default function BookingPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {paymentError && (
+                    <Alert className="mb-4 bg-red-50 border-red-200 text-red-800">
+                      <AlertDescription>
+                        <p>{paymentError}</p>
+                        <p className="text-sm mt-1">Please try again or contact support for assistance.</p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <form onSubmit={handleSubmit}>
                     {step === 1 && (
                       <div className="space-y-4">

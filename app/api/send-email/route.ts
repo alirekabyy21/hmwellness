@@ -22,18 +22,16 @@ export async function POST(request: NextRequest) {
     console.log("Email environment variables check:", {
       hostPresent: !!process.env.EMAIL_SERVER_HOST,
       portPresent: !!process.env.EMAIL_SERVER_PORT,
-      securePresent: !!process.env.EMAIL_SERVER_SECURE,
       userPresent: !!process.env.EMAIL_SERVER_USER,
       passwordPresent: !!process.env.EMAIL_SERVER_PASSWORD,
-      fromNamePresent: !!process.env.EMAIL_FROM_NAME,
-      fromAddressPresent: !!process.env.EMAIL_FROM_ADDRESS,
+      fromPresent: !!process.env.EMAIL_FROM,
     })
 
-    // Create a transporter
+    // Create a transporter with the correct configuration
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_SERVER_HOST,
       port: Number(process.env.EMAIL_SERVER_PORT),
-      secure: process.env.EMAIL_SERVER_SECURE === "true",
+      secure: process.env.EMAIL_SERVER_PORT === "465", // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_SERVER_USER,
         pass: process.env.EMAIL_SERVER_PASSWORD,
@@ -43,13 +41,23 @@ export async function POST(request: NextRequest) {
     // Send the email
     try {
       console.log("Sending email...")
-      const fromName = process.env.EMAIL_FROM_NAME || "HM Wellness"
-      const fromAddress = process.env.EMAIL_FROM_ADDRESS || "hello@hmwellness.com"
 
-      console.log(`Sending from: "${fromName}" <${fromAddress}>`)
+      // Parse the EMAIL_FROM value which is in the format "Name <email>"
+      let fromName = "HM Wellness"
+      let fromEmail = process.env.EMAIL_SERVER_USER
+
+      if (process.env.EMAIL_FROM) {
+        const matches = process.env.EMAIL_FROM.match(/"([^"]+)"\s+<([^>]+)>/)
+        if (matches && matches.length >= 3) {
+          fromName = matches[1]
+          fromEmail = matches[2]
+        }
+      }
+
+      console.log(`Sending from: "${fromName}" <${fromEmail}>`)
 
       const info = await transporter.sendMail({
-        from: `"${fromName}" <${fromAddress}>`,
+        from: `"${fromName}" <${fromEmail}>`,
         to,
         subject,
         html,

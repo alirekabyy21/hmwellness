@@ -28,11 +28,12 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as PaymentRequestBody
     const { orderId, customerName, customerEmail, isEgypt, isStudent, redirectUrl } = body
 
-    // Get Kashier credentials
+    // Get Kashier credentials - updated to match your environment variables
     const merchantId = process.env.KASHIER_MERCHANT_ID
-    const apiKey = process.env.KASHIER_API_KEY
+    const apiKey = process.env.KASHIER_SECRET_KEY // Changed to match your env var
 
     if (!merchantId || !apiKey) {
+      console.error("Missing Kashier credentials:", { merchantIdExists: !!merchantId, apiKeyExists: !!apiKey })
       return NextResponse.json({ success: false, error: "Missing Kashier credentials" }, { status: 500 })
     }
 
@@ -57,11 +58,16 @@ export async function POST(request: NextRequest) {
       email: customerEmail,
     }
 
+    // Use the correct payment gateway URL from environment variable
+    const paymentGatewayUrl = process.env.NEXT_PUBLIC_PAYMENT_GATEWAY_URL || "https://checkout.kashier.io"
+
     // Construct the payment URL
-    let paymentUrl = `https://payments.kashier.io?merchantId=${merchantId}&orderId=${orderId}&amount=${priceDetails.amount}&currency=${priceDetails.currency}&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
+    let paymentUrl = `${paymentGatewayUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${priceDetails.amount}&currency=${priceDetails.currency}&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
 
     // Add customer data
     paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
+
+    console.log("Generated payment URL:", paymentUrl)
 
     return NextResponse.json({
       success: true,
