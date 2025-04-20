@@ -10,9 +10,9 @@ export const kashierConfig = {
   mode: "test", // Change to "live" for production
   currency: "EGP",
   display: "popup", // or "page" for full page redirect
-  successRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment/success`,
-  failureRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment/failure`,
-  webhookUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/payment/webhook`,
+  successRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness-kopz.vercel.app"}/payment/success`,
+  failureRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness-kopz.vercel.app"}/payment/failure`,
+  webhookUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness-kopz.vercel.app"}/api/payment/webhook`,
 }
 
 // Generate a unique order ID

@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import crypto from "crypto-js"
 
@@ -15,6 +13,7 @@ interface KashierPaymentButtonProps {
   customerEmail: string
   customerPhone?: string
   redirectUrl: string
+  customerReference: string // ✅ Required by Kashier
   className?: string
   children?: React.ReactNode
 }
@@ -28,6 +27,7 @@ export function KashierPaymentButton({
   customerEmail,
   customerPhone,
   redirectUrl,
+  customerReference,
   className,
   children = "Pay Now",
 }: KashierPaymentButtonProps) {
@@ -36,42 +36,38 @@ export function KashierPaymentButton({
   const handlePayment = () => {
     setIsLoading(true)
 
-    // Get Kashier credentials from environment variables
     const merchantId = process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
     const apiKey = process.env.NEXT_PUBLIC_KASHIER_API_KEY
-    const testMode = process.env.NODE_ENV !== "production"
+    const isTestMode = process.env.NODE_ENV !== "production"
 
     if (!merchantId || !apiKey) {
-      console.error("Missing Kashier credentials")
+      alert("Missing Kashier credentials.")
       setIsLoading(false)
       return
     }
 
-    // Generate hash
     const hashString = `${amount}${currency}${orderId}${merchantId}${apiKey}`
     const hash = crypto.SHA256(hashString).toString()
 
-    // Create customer data
-    const customerData = {
+    const customer = {
       name: customerName,
       email: customerEmail,
-      phone: customerPhone || "",
+      phone: customerPhone ?? "",
     }
 
-    // Construct the payment URL
-    const baseUrl = "https://payments.kashier.io"
+    let paymentUrl = `https://checkout.kashier.io/?merchantId=${merchantId}`
+    paymentUrl += `&orderId=${orderId}`
+    paymentUrl += `&amount=${amount}`
+    paymentUrl += `&currency=${currency}`
+    paymentUrl += `&hash=${hash}`
+    paymentUrl += `&mode=${isTestMode ? "test" : "live"}`
+    paymentUrl += `&merchantRedirect=${encodeURIComponent(redirectUrl)}`
+    paymentUrl += `&display=en`
+    paymentUrl += `&type=external`
+    paymentUrl += `&description=${encodeURIComponent(description)}`
+    paymentUrl += `&customerReference=${encodeURIComponent(customerReference)}`
+    paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customer))}`
 
-    // Build the URL with required parameters
-    let paymentUrl = `${baseUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${amount}&currency=${currency}&hash=${hash}&mode=${testMode ? "test" : "live"}&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
-
-    // Add optional parameters
-    if (description) {
-      paymentUrl += `&description=${encodeURIComponent(description.substring(0, 120))}`
-    }
-
-    paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
-
-    // Redirect to payment page
     window.location.href = paymentUrl
   }
 
