@@ -1,5 +1,6 @@
 import crypto from "crypto"
 
+// Define the payment details interface
 export interface PaymentDetails {
   amount: number
   currency: string
@@ -9,34 +10,58 @@ export interface PaymentDetails {
   redirectUrl: string
 }
 
-export function createPaymentUrl(details: PaymentDetails): string {
+// Create a function to generate a payment URL
+export async function createPaymentUrl(details: PaymentDetails): Promise<string> {
   try {
-    // Get Kashier credentials
-    const merchantId = process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
-    const apiKey = process.env.NEXT_PUBLIC_KASHIER_API_KEY
+    // Get Kashier credentials from environment variables
+    const merchantId = process.env.KASHIER_MERCHANT_ID
+    const secretKey = process.env.KASHIER_SECRET_KEY
 
-    if (!merchantId || !apiKey) {
+    if (!merchantId || !secretKey) {
+      console.error("Missing Kashier credentials:", {
+        merchantIdExists: !!merchantId,
+        secretKeyExists: !!secretKey,
+      })
       throw new Error("Missing Kashier credentials")
     }
 
-    // Generate hash
-    const hashString = `${details.amount}${details.currency}${details.orderId}${merchantId}${apiKey}`
-    const hash = crypto.createHash("sha256").update(hashString).digest("hex")
+    // Format amount to ensure it has 2 decimal places
+    const formattedAmount = Number(details.amount).toFixed(2)
+
+    // Generate signature using HMAC-SHA256
+    // Format: merchantId + amount + currency + orderId
+    const signatureString = `${merchantId}${formattedAmount}${details.currency}${details.orderId}`
+    const signature = crypto.createHmac("sha256", secretKey).update(signatureString).digest("hex")
 
     // Create the payment URL
-    let paymentUrl = `https://payments.kashier.io?merchantId=${merchantId}&orderId=${details.orderId}&amount=${details.amount}&currency=${details.currency}&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(details.redirectUrl)}&display=en&type=external`
+    const paymentUrl = new URL("https://checkout.kashier.io")
 
-    // Add customer data if provided
-    if (details.customerName && details.customerEmail) {
-      const customerData = {
-        name: details.customerName,
-        email: details.customerEmail,
-      }
+    // Add required parameters
+    paymentUrl.searchParams.append("merchantId", merchantId)
+    paymentUrl.searchParams.append("amount", formattedAmount)
+    paymentUrl.searchParams.append("currency", details.currency)
+    paymentUrl.searchParams.append("orderId", details.orderId)
+    paymentUrl.searchParams.append("signature", signature)
 
-      paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
+    // Always use test mode for now
+    paymentUrl.searchParams.append("mode", "test")
+
+    // Add redirect URL
+    paymentUrl.searchParams.append("redirectUrl", details.redirectUrl)
+
+    // Set display language to English
+    paymentUrl.searchParams.append("display", "en")
+
+    // Add customer data
+    const customerData = {
+      name: details.customerName,
+      email: details.customerEmail,
     }
+    paymentUrl.searchParams.append("customer", JSON.stringify(customerData))
 
-    return paymentUrl
+    console.log("Generated payment URL:", paymentUrl.toString())
+
+    return paymentUrl.toString()
   } catch (error) {
     console.error("Error creating payment URL:", error)
     throw error

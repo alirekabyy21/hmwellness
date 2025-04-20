@@ -28,6 +28,16 @@ import { SimpleConfirmation } from "./simple-confirmation"
 import { EmailFallback } from "./email-fallback"
 import { toast } from "@/components/ui/use-toast"
 
+const pricingConfig = {
+  egypt: {
+    regular: 600,
+    student: 400,
+  },
+  international: {
+    regular: 75,
+  },
+}
+
 export default function BookingPage() {
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [timeSlot, setTimeSlot] = useState<string>("")
@@ -179,19 +189,23 @@ export default function BookingPage() {
 
         console.log("Email sending result:", emailSuccess)
 
-        // Create payment using the API
+        // Create payment using the simplified API
         const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
         console.log("Creating payment with:", {
           orderId,
           customerName: formData.name,
           customerEmail: formData.email,
-          isEgypt: userLocation.isEgypt,
-          isStudent: promoCodeValid,
+          amount: userLocation.isEgypt
+            ? promoCodeValid
+              ? pricingConfig.egypt.student
+              : pricingConfig.egypt.regular
+            : pricingConfig.international.regular,
+          currency: userLocation.isEgypt ? "EGP" : "USD",
           redirectUrl,
         })
 
-        const paymentResponse = await fetch("/api/payment/create", {
+        const paymentResponse = await fetch("/api/payment", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -200,8 +214,12 @@ export default function BookingPage() {
             orderId,
             customerName: formData.name,
             customerEmail: formData.email,
-            isEgypt: userLocation.isEgypt,
-            isStudent: promoCodeValid,
+            amount: userLocation.isEgypt
+              ? promoCodeValid
+                ? pricingConfig.egypt.student
+                : pricingConfig.egypt.regular
+              : pricingConfig.international.regular,
+            currency: userLocation.isEgypt ? "EGP" : "USD",
             redirectUrl,
           }),
         })
