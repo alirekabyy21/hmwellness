@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const paymentGatewayUrl = process.env.NEXT_PUBLIC_PAYMENT_GATEWAY_URL || "https://checkout.kashier.io"
 
     // Construct the payment URL
-    let paymentUrl = `${paymentGatewayUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${priceDetails.amount}&currency=${priceDetails.currency}&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
+    let paymentUrl = `${paymentGatewayUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${priceDetails.amount}&currency=${priceDetails.currency}&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external&customerReference=${encodeURIComponent(customerName)}`
 
     // Add customer data
     paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
