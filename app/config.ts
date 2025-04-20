@@ -1,3 +1,58 @@
+export const pricingConfig = {
+  currency: {
+    egypt: "EGP",
+    international: "$",
+  },
+  sessionPrices: {
+    egypt: 600,
+    egyptStudent: 400, // Added student price
+    international: 30,
+  },
+  packages: [
+    {
+      title: "Single Session",
+      description: "One 60-minute coaching session",
+      priceEgypt: 600,
+      priceInternational: 30,
+      period: "per session",
+      features: [
+        "60-minute online session",
+        "Session recording available",
+        "Follow-up email with action items",
+        "Email support for 1 week",
+      ],
+    },
+    {
+      title: "Monthly Package",
+      description: "Four 60-minute sessions",
+      priceEgypt: 2000,
+      priceInternational: 100,
+      period: "per month",
+      features: [
+        "4 weekly 60-minute sessions",
+        "Session recordings available",
+        "Detailed action plan",
+        "Unlimited email support",
+        "Progress tracking",
+      ],
+    },
+    {
+      title: "3-Month Program",
+      description: "Twelve 60-minute sessions",
+      priceEgypt: 5400,
+      priceInternational: 270,
+      period: "($90 per month)",
+      features: [
+        "12 weekly 60-minute sessions",
+        "Session recordings available",
+        "Comprehensive development plan",
+        "Unlimited email support",
+        "Priority scheduling",
+        "Monthly progress reviews",
+      ],
+    },
+  ],
+}
 export const siteConfig = {
   name: "HM Wellness", // Website name
   coachName: "Hagar Moharam", // Coach name
