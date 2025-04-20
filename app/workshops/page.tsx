@@ -1,3 +1,6 @@
+// Ensure "use client" is the first line of the file
+"use client"
+
 import type React from "react"
 import Link from "next/link"
 import { CalendarClock, BellRing } from "lucide-react"
@@ -8,9 +11,6 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
-
-// Mark the parent component as a Client Component
-"use client"
 
 export default function WorkshopsPage() {
   return (
