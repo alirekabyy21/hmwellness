@@ -8,10 +8,8 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-<<<<<<< HEAD
     console.log("Sending email to:", options.to)
 
-    // Create a transporter directly in the function to ensure fresh configuration
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_SERVER_HOST,
       port: Number(process.env.EMAIL_SERVER_PORT),
@@ -19,27 +17,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       auth: {
         user: process.env.EMAIL_SERVER_USER,
         pass: process.env.EMAIL_SERVER_PASSWORD,
-=======
-    console.log("Attempting to send email to:", options.to)
-
-    // Check if we're in a browser environment
-    if (typeof window !== "undefined") {
-      console.log("Email details (client-side):", {
-        to: options.to,
-        subject: options.subject,
-        htmlLength: options.html.length,
-      })
-    }
-
-    const response = await fetch("/api/send-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
->>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
       },
     })
 
-    // Send the email directly
     const info = await transporter.sendMail({
       from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
       to: options.to,
@@ -47,14 +27,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       html: options.html,
     })
 
-<<<<<<< HEAD
     console.log("Email sent successfully:", info.messageId)
     return true
-=======
-    const data = await response.json()
-    console.log("Email sent successfully:", data)
-    return data.success
->>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
   } catch (error) {
     console.error("Error sending email:", error)
     return false
