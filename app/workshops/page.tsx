@@ -56,6 +56,7 @@ export default function WorkshopsPage() {
 // Client component for the notification signup
 function NotificationSignup() {
   "use client"
+
   const [email, setEmail] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
