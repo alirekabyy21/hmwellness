@@ -1,61 +1,64 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createPaymentUrl, generateOrderId } from "@/lib/payment"
+import crypto from "crypto"
 import { pricingConfig } from "@/app/config"
+
+interface PaymentRequestBody {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  isEgypt: boolean
+  isStudent: boolean
+  redirectUrl: string
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { amount, customerData, promoCode, isInternational } = body
+    const body = (await request.json()) as PaymentRequestBody
+    const { orderId, customerName, customerEmail, isEgypt, isStudent, redirectUrl } = body
 
-    // Validate amount
-    if (!amount || isNaN(Number.parseFloat(amount)) || Number.parseFloat(amount) <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 })
+    // Get Kashier credentials
+    const merchantId = process.env.KASHIER_MERCHANT_ID
+    const apiKey = process.env.KASHIER_API_KEY
+
+    if (!merchantId || !apiKey) {
+      return NextResponse.json({ success: false, error: "Missing Kashier credentials" }, { status: 500 })
     }
 
-    // Verify promo code if provided
-    let finalAmount = Number.parseFloat(amount)
-    let discountApplied = false
+    // Determine price and currency based on location and discount
+    const priceDetails = isEgypt
+      ? {
+          amount: isStudent ? pricingConfig.egypt.student : pricingConfig.egypt.regular,
+          currency: pricingConfig.egypt.currency,
+        }
+      : {
+          amount: pricingConfig.international.regular,
+          currency: pricingConfig.international.currency,
+        }
 
-    if (promoCode && promoCode === pricingConfig.studentPromo.code && !isInternational) {
-      // Verify the amount matches the expected discounted price
-      const expectedPrice = pricingConfig.tiers.egypt.regular - pricingConfig.studentPromo.discount
-      if (Math.abs(finalAmount - expectedPrice) > 0.01) {
-        // If there's a mismatch, use the correct discounted price
-        finalAmount = expectedPrice
-      }
-      discountApplied = true
-    } else if (isInternational) {
-      // For international clients, verify the amount matches the expected price
-      const expectedPrice = pricingConfig.international
-      if (Math.abs(finalAmount - expectedPrice) > 0.01) {
-        // If there's a mismatch, use the correct international price
-        finalAmount = expectedPrice
-      }
-    } else {
-      // For regular clients, verify the amount matches the expected price
-      const expectedPrice = pricingConfig.tiers.egypt.regular
-      if (Math.abs(finalAmount - expectedPrice) > 0.01) {
-        // If there's a mismatch, use the correct regular price
-        finalAmount = expectedPrice
-      }
+    // Generate hash
+    const hashString = `${priceDetails.amount}${priceDetails.currency}${orderId}${merchantId}${apiKey}`
+    const hash = crypto.createHash("sha256").update(hashString).digest("hex")
+
+    // Create customer data
+    const customerData = {
+      name: customerName,
+      email: customerEmail,
     }
 
-    // Generate a unique order ID
-    const orderId = generateOrderId()
+    // Construct the payment URL
+    let paymentUrl = `https://payments.kashier.io?merchantId=${merchantId}&orderId=${orderId}&amount=${priceDetails.amount}&currency=${priceDetails.currency}&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
 
-    // Create payment URL
-    const paymentUrl = createPaymentUrl(orderId, finalAmount, customerData, isInternational ? "USD" : "EGP")
+    // Add customer data
+    paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
 
     return NextResponse.json({
       success: true,
-      orderId,
       paymentUrl,
-      amount: finalAmount,
-      currency: isInternational ? "USD" : "EGP",
-      discountApplied,
+      amount: priceDetails.amount,
+      currency: priceDetails.currency,
     })
   } catch (error) {
-    console.error("Payment creation error:", error)
-    return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
+    console.error("Error creating payment:", error)
+    return NextResponse.json({ success: false, error: "Failed to create payment" }, { status: 500 })
   }
 }

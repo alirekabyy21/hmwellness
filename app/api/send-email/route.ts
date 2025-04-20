@@ -38,21 +38,7 @@ export async function POST(request: NextRequest) {
         user: process.env.EMAIL_SERVER_USER,
         pass: process.env.EMAIL_SERVER_PASSWORD,
       },
-      debug: true, // Enable debug output
     })
-
-    // Verify connection configuration
-    try {
-      console.log("Verifying SMTP connection...")
-      await transporter.verify()
-      console.log("SMTP connection verified successfully")
-    } catch (verifyError) {
-      console.error("SMTP connection verification failed:", verifyError)
-      return NextResponse.json(
-        { success: false, error: "Email server connection failed", details: verifyError },
-        { status: 500 },
-      )
-    }
 
     // Send the email
     try {

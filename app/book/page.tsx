@@ -112,20 +112,6 @@ export default function BookingPage() {
     return bookingContent.sessionPrice.egypt
   }
 
-  const getPriceValue = () => {
-    if (!userLocation.isEgypt) {
-      return 30 // International price in USD
-    }
-
-    // Apply student discount if promo code is valid
-    if (promoCodeValid) {
-      return 400 // Student price in EGP
-    }
-
-    return 600 // Regular price in EGP
-  }
-
-  // Update the handleSubmit function to use the payment service
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -175,7 +161,7 @@ export default function BookingPage() {
         )
 
         // Try to send email
-        const emailSuccess = await sendEmail({
+        await sendEmail({
           to: formData.email,
           subject: "Your Coaching Session is Confirmed - HM Wellness",
           html: generateConfirmationEmail(
@@ -189,13 +175,35 @@ export default function BookingPage() {
           ),
         })
 
-        // Set booking as confirmed
-        setIsBooked(true)
+        // Create payment using the API
+        const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
-        // If email failed, show the fallback
-        if (!emailSuccess) {
-          console.log("Email sending failed, showing fallback")
-          setShowEmailFallback(true)
+        const paymentResponse = await fetch("/api/payment/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId,
+            customerName: formData.name,
+            customerEmail: formData.email,
+            isEgypt: userLocation.isEgypt,
+            isStudent: promoCodeValid,
+            redirectUrl,
+          }),
+        })
+
+        if (!paymentResponse.ok) {
+          throw new Error("Failed to create payment")
+        }
+
+        const paymentData = await paymentResponse.json()
+
+        if (paymentData.success && paymentData.paymentUrl) {
+          // Redirect to payment page
+          window.location.href = paymentData.paymentUrl
+        } else {
+          throw new Error("Invalid payment response")
         }
       }
     } catch (error) {
@@ -203,7 +211,6 @@ export default function BookingPage() {
       // Show the fallback if there was an error
       setIsBooked(true)
       setShowEmailFallback(true)
-    } finally {
       setIsSubmitting(false)
     }
   }
