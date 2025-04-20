@@ -18,6 +18,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Log environment variables (without exposing sensitive data)
+    console.log("Email environment variables check:", {
+      hostPresent: !!process.env.EMAIL_SERVER_HOST,
+      portPresent: !!process.env.EMAIL_SERVER_PORT,
+      securePresent: !!process.env.EMAIL_SERVER_SECURE,
+      userPresent: !!process.env.EMAIL_SERVER_USER,
+      passwordPresent: !!process.env.EMAIL_SERVER_PASSWORD,
+      fromNamePresent: !!process.env.EMAIL_FROM_NAME,
+      fromAddressPresent: !!process.env.EMAIL_FROM_ADDRESS,
+    })
+
     // Create a transporter
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_SERVER_HOST,
@@ -30,6 +41,22 @@ export async function POST(request: NextRequest) {
       debug: true, // Enable debug output
     })
 
+<<<<<<< HEAD
+=======
+    // Verify connection configuration
+    try {
+      console.log("Verifying SMTP connection...")
+      await transporter.verify()
+      console.log("SMTP connection verified successfully")
+    } catch (verifyError) {
+      console.error("SMTP connection verification failed:", verifyError)
+      return NextResponse.json(
+        { success: false, error: "Email server connection failed", details: verifyError },
+        { status: 500 },
+      )
+    }
+
+>>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
     // Send the email
     try {
       console.log("Sending email...")

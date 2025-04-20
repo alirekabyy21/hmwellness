@@ -26,9 +26,12 @@ import { detectUserLocationSimple } from "@/lib/location-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { SimpleConfirmation } from "./simple-confirmation"
 import { EmailFallback } from "./email-fallback"
+<<<<<<< HEAD
 
 // Add import for the payment service
 import { createPaymentUrl } from "@/lib/payment-service"
+=======
+>>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
 
 export default function BookingPage() {
   const [date, setDate] = useState<Date | undefined>(undefined)
@@ -52,7 +55,10 @@ export default function BookingPage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>(bookingContent.timeSlots)
   const [meetingLink, setMeetingLink] = useState("")
   const [showPromoInfo, setShowPromoInfo] = useState(false)
+<<<<<<< HEAD
   // Update the state to hide the email fallback by default
+=======
+>>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
   const [showEmailFallback, setShowEmailFallback] = useState(false)
 
   // Detect user's location
@@ -179,7 +185,11 @@ export default function BookingPage() {
         )
 
         // Try to send email
+<<<<<<< HEAD
         await sendEmail({
+=======
+        const emailSuccess = await sendEmail({
+>>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
           to: formData.email,
           subject: "Your Coaching Session is Confirmed - HM Wellness",
           html: generateConfirmationEmail(
@@ -193,6 +203,7 @@ export default function BookingPage() {
           ),
         })
 
+<<<<<<< HEAD
         // Get the price value
         const amount = getPriceValue()
         const currency = userLocation.isEgypt ? "EGP" : "USD"
@@ -212,6 +223,16 @@ export default function BookingPage() {
 
         // Redirect to payment page
         window.location.href = paymentUrl
+=======
+        // Set booking as confirmed
+        setIsBooked(true)
+
+        // If email failed, show the fallback
+        if (!emailSuccess) {
+          console.log("Email sending failed, showing fallback")
+          setShowEmailFallback(true)
+        }
+>>>>>>> 47d9858b6baaefa4ff69f74a405a96c00f48fa7b
       }
     } catch (error) {
       console.error("Error booking appointment:", error)
