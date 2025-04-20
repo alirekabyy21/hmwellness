@@ -81,9 +81,42 @@ export function generateConfirmationEmail(
       <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666;">
         <p>© ${new Date().getFullYear()} HM Wellness. All rights reserved.</p>
         <p>
-          <a href="https://hmwellness.com/privacy" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Privacy Policy</a> | 
-          <a href="https://hmwellness.com/terms" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Terms & Conditions</a> |
-          <a href="https://hmwellness.com/refund" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Refund Policy</a>
+          <a href="https://hmwellness.site/privacy" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Privacy Policy</a> | 
+          <a href="https://hmwellness.site/terms" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Terms & Conditions</a> |
+          <a href="https://hmwellness.site/refund" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Refund Policy</a>
+        </p>
+      </div>
+    </div>
+  `
+}
+
+// Add a function to generate a test email
+export function generateTestEmail(): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background-color: #8a2be2; color: white; padding: 20px; text-align: center;">
+        <h1 style="margin: 0;">HM Wellness</h1>
+        <p style="margin: 10px 0 0;">Email Test</p>
+      </div>
+      
+      <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+        <p>Hello,</p>
+        
+        <p>This is a test email from HM Wellness website.</p>
+        
+        <p>If you received this email, it means the email functionality is working correctly.</p>
+        
+        <p>Time sent: ${new Date().toLocaleString()}</p>
+        
+        <p>Warm regards,<br>HM Wellness Team</p>
+      </div>
+      
+      <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666;">
+        <p>© ${new Date().getFullYear()} HM Wellness. All rights reserved.</p>
+        <p>
+          <a href="https://hmwellness.site/privacy" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Privacy Policy</a> | 
+          <a href="https://hmwellness.site/terms" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Terms & Conditions</a> |
+          <a href="https://hmwellness.site/refund" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Refund Policy</a>
         </p>
       </div>
     </div>

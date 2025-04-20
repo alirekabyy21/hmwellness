@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
       // Parse the EMAIL_FROM value which is in the format "Name <email>"
       let fromName = "HM Wellness"
-      let fromEmail = process.env.EMAIL_SERVER_USER
+      let fromEmail = process.env.EMAIL_SERVER_USER || "hagar@hmwellness.site"
 
       if (process.env.EMAIL_FROM) {
         const matches = process.env.EMAIL_FROM.match(/"([^"]+)"\s+<([^>]+)>/)

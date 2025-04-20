@@ -3,13 +3,14 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { siteConfig } from "./config"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Hagar Moharam | Professional Life Coach",
-  description:
-    "Discover your true potential with Hagar Moharam, a certified life coach dedicated to helping you achieve your goals and live a more fulfilling life.",
+  title: `${siteConfig.coachName} | Professional Life Coach`,
+  description: siteConfig.description,
+  metadataBase: new URL(`https://${siteConfig.domain}`),
 }
 
 export default function RootLayout({

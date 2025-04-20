@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import crypto from "crypto-js"
@@ -35,9 +36,10 @@ export function KashierPaymentButton({
   const handlePayment = () => {
     setIsLoading(true)
 
+    // Get Kashier credentials from environment variables
     const merchantId = process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
     const apiKey = process.env.NEXT_PUBLIC_KASHIER_API_KEY
-    const isTestMode = process.env.NODE_ENV !== "production"
+    const testMode = process.env.NODE_ENV !== "production"
 
     if (!merchantId || !apiKey) {
       console.error("Missing Kashier credentials")
@@ -49,30 +51,27 @@ export function KashierPaymentButton({
     const hashString = `${amount}${currency}${orderId}${merchantId}${apiKey}`
     const hash = crypto.SHA256(hashString).toString()
 
-    // Customer data
+    // Create customer data
     const customerData = {
       name: customerName,
       email: customerEmail,
       phone: customerPhone || "",
     }
 
-    // Correct Kashier base URL
-    const baseUrl = "https://checkout.kashier.io"
+    // Construct the payment URL
+    const baseUrl = "https://payments.kashier.io"
 
-    // Build payment URL
-    let paymentUrl = `${baseUrl}?merchantId=${merchantId}`
-    paymentUrl += `&orderId=${orderId}`
-    paymentUrl += `&amount=${amount}`
-    paymentUrl += `&currency=${currency}`
-    paymentUrl += `&hash=${hash}`
-    paymentUrl += `&mode=${isTestMode ? "test" : "live"}`
-    paymentUrl += `&merchantRedirect=${encodeURIComponent(redirectUrl)}`
-    paymentUrl += `&display=en&type=external`
-    paymentUrl += `&customerReference=${orderId}` // ✅ Important
-    paymentUrl += `&description=${encodeURIComponent(description)}`
+    // Build the URL with required parameters
+    let paymentUrl = `${baseUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${amount}&currency=${currency}&hash=${hash}&mode=${testMode ? "test" : "live"}&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
+
+    // Add optional parameters
+    if (description) {
+      paymentUrl += `&description=${encodeURIComponent(description.substring(0, 120))}`
+    }
+
     paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
 
-    // Redirect to Kashier
+    // Redirect to payment page
     window.location.href = paymentUrl
   }
 
