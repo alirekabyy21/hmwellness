@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/layout/site-header"
-import { SiteFooter } from "@/components/layout/site-footer"
+import { SiteFooter } from "@/components/layout/site-header"
 import { PageHeader } from "@/components/layout/page-header"
 import { bookingContent } from "../config"
 import { createCalendarEvent, getAvailableSlots } from "@/lib/calendar-client"
@@ -27,6 +27,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { SimpleConfirmation } from "./simple-confirmation"
 import { EmailFallback } from "./email-fallback"
 import { toast } from "@/components/ui/use-toast"
+import { CountrySelector } from "@/components/country-selector"
 
 const pricingConfig = {
   egypt: {
@@ -67,6 +68,7 @@ export default function BookingPage() {
   const [showPromoInfo, setShowPromoInfo] = useState(false)
   const [showEmailFallback, setShowEmailFallback] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [countryCode, setCountryCode] = useState("+20")
 
   // Detect user's location
   useEffect(() => {
@@ -117,19 +119,37 @@ export default function BookingPage() {
       isValid = false
     }
 
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    // Validate email (more strict validation)
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     if (!emailRegex.test(formData.email)) {
-      errors.email = "Please enter a valid email address"
+      errors.email = "Please enter a valid email address (e.g., name@example.com)"
       isValid = false
     }
 
-    // Validate phone (allow international formats)
-    // This regex allows for various international formats
-    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/
-    if (!phoneRegex.test(formData.phone)) {
-      errors.phone = "Please enter a valid phone number"
-      isValid = false
+    // Validate phone (specific validation for Egyptian and international numbers)
+    if (userLocation.isEgypt) {
+      // Egyptian phone number validation (starts with 01, followed by 9 digits)
+      const egyptianPhoneRegex = /^01[0-2,5]{1}[0-9]{8}$/
+      const cleanPhone = formData.phone.replace(/\s+/g, "").replace(/^0/, "") // Remove spaces and leading 0
+
+      // If they entered the full number with 01 prefix
+      if (egyptianPhoneRegex.test(formData.phone)) {
+        // Valid full Egyptian number
+      }
+      // If they entered without the 01 prefix (since we have the country code selector)
+      else if (/^[0-9]{9}$/.test(cleanPhone)) {
+        // Valid Egyptian number without prefix
+      } else {
+        errors.phone = "Please enter a valid Egyptian phone number"
+        isValid = false
+      }
+    } else {
+      // International phone validation (more permissive but still requires numbers)
+      const cleanPhone = formData.phone.replace(/\s+|-|$$|$$/g, "")
+      if (!/^[0-9]{6,15}$/.test(cleanPhone)) {
+        errors.phone = "Please enter a valid phone number"
+        isValid = false
+      }
     }
 
     setFormErrors(errors)
@@ -218,9 +238,14 @@ export default function BookingPage() {
         const endTime = new Date(startTime)
         endTime.setHours(endTime.getHours() + 1)
 
+        // Add this before creating the calendar event
+        // Combine country code with phone number
+        const fullPhoneNumber = `${countryCode}${formData.phone.replace(/^0/, "")}`
+
+        // Then update the calendarEvent creation to use fullPhoneNumber
         const calendarEvent = await createCalendarEvent({
           summary: `${formData.name}'s Coaching Session`,
-          description: `Service: 60-Minute Coaching Session\nClient: ${formData.name}\nPhone: ${formData.phone}\nNotes: ${formData.message}`,
+          description: `Service: 60-Minute Coaching Session\nClient: ${formData.name}\nPhone: ${fullPhoneNumber}\nNotes: ${formData.message}`,
           startTime,
           endTime,
           attendees: [formData.email, "hagarmoharam7@gmail.com"], // Add the coach's email
@@ -261,14 +286,12 @@ export default function BookingPage() {
 
         console.log("Email sending result:", emailSuccess)
 
-        // TEMPORARY: Skip payment and show confirmation directly
-        // Comment this section out when payment is ready
-        setIsBooked(true)
-        setIsSubmitting(false)
-        return
+        // Remove the temporary skip payment section
+        // setIsBooked(true);
+        // setIsSubmitting(false);
+        // return;
 
-        // PAYMENT SECTION - Uncomment when payment is ready
-        /*
+        // PAYMENT SECTION - Now enabled
         // Create payment using the simplified API
         const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
@@ -319,7 +342,6 @@ export default function BookingPage() {
         } else {
           throw new Error("Invalid payment response: " + JSON.stringify(paymentData))
         }
-        */
       }
     } catch (error) {
       console.error("Error booking appointment:", error)
@@ -515,23 +537,36 @@ export default function BookingPage() {
                           <Label htmlFor="phone" className="text-base">
                             Phone Number <span className="text-red-500">*</span>
                           </Label>
-                          <Input
-                            id="phone"
-                            name="phone"
-                            type="tel"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            placeholder="+20 123 456 7890 or other international format"
-                            required
-                            className={cn(
-                              "border-primary/20 focus-visible:ring-primary",
-                              formErrors.phone && "border-red-500",
-                            )}
-                          />
+                          <div className="flex gap-2">
+                            <CountrySelector
+                              value={countryCode}
+                              onChange={setCountryCode}
+                              isEgypt={userLocation.isEgypt}
+                            />
+                            <Input
+                              id="phone"
+                              name="phone"
+                              type="tel"
+                              value={formData.phone}
+                              onChange={handleInputChange}
+                              placeholder={userLocation.isEgypt ? "1012345678" : "123 456 7890"}
+                              required
+                              className={cn(
+                                "border-primary/20 focus-visible:ring-primary flex-1",
+                                formErrors.phone && "border-red-500",
+                              )}
+                            />
+                          </div>
                           {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Please include your country code (e.g., +20 for Egypt, +1 for US)
-                          </p>
+                          {userLocation.isEgypt ? (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Egyptian phone numbers should be 11 digits starting with 01 (e.g., 01012345678)
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Enter your phone number without the country code
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
