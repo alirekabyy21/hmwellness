@@ -19,10 +19,8 @@ export default function TestPaymentPage() {
     setIsLoading(true)
 
     try {
-      // Create a unique order ID
       const orderId = uuidv4()
 
-      // Get Kashier credentials
       const merchantId = process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
       const apiKey = process.env.NEXT_PUBLIC_KASHIER_API_KEY
 
@@ -30,32 +28,33 @@ export default function TestPaymentPage() {
         throw new Error("Missing Kashier credentials")
       }
 
-      // Define the redirect URL
       const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
-      // Generate hash
       const hashString = `${amount}EGP${orderId}${merchantId}${apiKey}`
       const hash = crypto.SHA256(hashString).toString()
 
-      // Create customer data
       const customerData = {
         name: "Test User",
         email: "test@example.com",
         phone: "+201234567890",
       }
 
-      // Construct the payment URL
-      const baseUrl = "https://payments.kashier.io"
+      // ✅ Use the correct base URL
+      const baseUrl = "https://checkout.kashier.io"
 
-      // Build the URL with required parameters
-      let paymentUrl = `${baseUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${amount}&currency=EGP&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
-
-      // Add optional parameters
-      const description = "Test payment for HM Wellness"
-      paymentUrl += `&description=${encodeURIComponent(description)}`
+      // ✅ Build the updated payment URL
+      let paymentUrl = `${baseUrl}?merchantId=${merchantId}`
+      paymentUrl += `&orderId=${orderId}`
+      paymentUrl += `&amount=${amount}`
+      paymentUrl += `&currency=EGP`
+      paymentUrl += `&hash=${hash}`
+      paymentUrl += `&mode=test`
+      paymentUrl += `&merchantRedirect=${encodeURIComponent(redirectUrl)}`
+      paymentUrl += `&display=en&type=external`
+      paymentUrl += `&description=${encodeURIComponent("Test payment for HM Wellness")}`
+      paymentUrl += `&customerReference=${orderId}` // ✅ Required by Kashier
       paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
 
-      // Redirect to payment page
       window.location.href = paymentUrl
     } catch (error) {
       console.error("Error creating payment:", error)
