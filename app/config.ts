@@ -1,14 +1,3 @@
-// config.ts
-export const emailConfig = {
-  host: process.env.EMAIL_SERVER_HOST,
-  port: process.env.EMAIL_SERVER_PORT,
-  secure: process.env.EMAIL_SERVER_PORT === "465", // For SSL use port 465
-  user: process.env.EMAIL_SERVER_USER,
-  password: process.env.EMAIL_SERVER_PASSWORD,
-  fromName: process.env.EMAIL_FROM_NAME || "HM Wellness",
-  fromEmail: process.env.EMAIL_SERVER_USER, // Usually the same as user
-};
-
 export const siteConfig = {
   name: "HM Wellness", // Website name
   coachName: "Hagar Moharam", // Coach name
@@ -390,4 +379,12 @@ export const pricingConfig = {
     regular: 30,
     currency: "USD",
   },
+}
+
+// Email configuration
+export const emailConfig = {
+  from: "HM Wellness <hagar@hmwellness.site>",
+  replyTo: "hagar@hmwellness.site",
+  contactEmail: "hagar@hmwellness.site",
+  supportEmail: "support@hmwellness.site",
 }

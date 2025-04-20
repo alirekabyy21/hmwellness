@@ -2,18 +2,11 @@ import { type NextRequest, NextResponse } from "next/server"
 import { google } from "googleapis"
 import { OAuth2Client } from "google-auth-library"
 
-export interface CalendarEvent {
-  summary: string
-  description: string
-  startTime: string
-  endTime: string
-  attendees: string[]
-}
-
+// This is a server-side only file
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { summary, description, startTime, endTime, attendees } = body as CalendarEvent
+    const { summary, description, startTime, endTime, attendees } = body
 
     // Set up OAuth2 client with credentials
     const oauth2Client = new OAuth2Client(
@@ -28,24 +21,21 @@ export async function POST(request: NextRequest) {
     })
 
     // Create a Calendar client
-    const calendar = google.calendar({
-      version: "v3",
-      auth: oauth2Client,
-    })
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client })
 
     // Format the event for Google Calendar
     const calendarEvent = {
       summary,
       description,
       start: {
-        dateTime: startTime,
+        dateTime: new Date(startTime).toISOString(),
         timeZone: "Africa/Cairo", // Using Cairo time zone for Egypt
       },
       end: {
-        dateTime: endTime,
+        dateTime: new Date(endTime).toISOString(),
         timeZone: "Africa/Cairo",
       },
-      attendees: attendees.map((email) => ({ email })),
+      attendees: attendees.map((email: string) => ({ email })),
       conferenceData: {
         createRequest: {
           requestId: `meeting-${Date.now()}`,
@@ -58,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Insert the event
     const response = await calendar.events.insert({
-      calendarId: process.env.GOOGLE_CALENDAR_ID || "hagarmoharam7@gmail.com",
+      calendarId: process.env.GOOGLE_CALENDAR_ID || "primary",
       requestBody: calendarEvent,
       conferenceDataVersion: 1,
     })
@@ -84,28 +74,21 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating calendar event:", error)
 
-    // Create a fallback response with a mock meeting link
-    const meetCode = Math.random().toString(36).substring(2, 11)
-    const meetingLink = `https://meet.google.com/${meetCode}`
-
-    // Generate a fallback Google Calendar link
-    const body = await request.json() // Declare body here
-    const calendarEventLink = generateGoogleCalendarLink({
-      summary: body?.summary || "Coaching Session",
-      description: body?.description || "Session with Hagar Moharam",
-      startTime: new Date(body?.startTime || Date.now()),
-      endTime: new Date(body?.endTime || Date.now() + 3600000),
-      location: meetingLink,
-    })
-
+    // Return a fallback response
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to create calendar event",
+        error: error instanceof Error ? error.message : "Unknown error",
         // Provide fallback data for development/testing
         eventId: `event_${Math.random().toString(36).substring(2, 11)}`,
-        meetingLink,
-        calendarEventLink,
+        meetingLink: `https://meet.google.com/${Math.random().toString(36).substring(2, 7)}`,
+        calendarEventLink: generateGoogleCalendarLink({
+          summary: "Fallback Event",
+          description: "This is a fallback event due to an error",
+          startTime: new Date(),
+          endTime: new Date(Date.now() + 3600000),
+          location: "",
+        }),
       },
       { status: 500 },
     )

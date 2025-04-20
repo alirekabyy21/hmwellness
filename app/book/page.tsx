@@ -20,7 +20,7 @@ import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
 import { bookingContent } from "../config"
-import { createCalendarEvent } from "@/lib/google-calendar"
+import { createCalendarEvent, getAvailableSlots } from "@/lib/calendar-client"
 import { sendEmail, generateConfirmationEmail } from "@/lib/email-service"
 import { detectUserLocationSimple } from "@/lib/location-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -73,6 +73,18 @@ export default function BookingPage() {
     detectLocation()
   }, [])
 
+  // Fetch available slots when date changes
+  useEffect(() => {
+    if (date) {
+      const fetchSlots = async () => {
+        const slots = await getAvailableSlots(date)
+        setAvailableSlots(slots)
+      }
+
+      fetchSlots()
+    }
+  }, [date])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -124,6 +136,7 @@ export default function BookingPage() {
     return bookingContent.sessionPrice.egypt
   }
 
+  // Update the handleSubmit function to send confirmation email before payment
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -147,7 +160,7 @@ export default function BookingPage() {
         endTime.setHours(endTime.getHours() + 1)
 
         const calendarEvent = await createCalendarEvent({
-          summary: `Coaching Session with ${formData.name}`,
+          summary: `${formData.name}'s Coaching Session`,
           description: `Service: 60-Minute Coaching Session\nClient: ${formData.name}\nPhone: ${formData.phone}\nNotes: ${formData.message}`,
           startTime,
           endTime,
@@ -172,7 +185,7 @@ export default function BookingPage() {
 
         sessionStorage.setItem("bookingDetails", JSON.stringify(bookingDetails))
 
-        // Try to send email
+        // Send confirmation email first
         const emailSuccess = await sendEmail({
           to: formData.email,
           subject: "Your Coaching Session is Confirmed - HM Wellness",
@@ -189,6 +202,14 @@ export default function BookingPage() {
 
         console.log("Email sending result:", emailSuccess)
 
+        // TEMPORARY: Skip payment and show confirmation directly
+        // Comment this section out when payment is ready
+        setIsBooked(true)
+        setIsSubmitting(false)
+        return
+
+        // PAYMENT SECTION - Uncomment when payment is ready
+        /*
         // Create payment using the simplified API
         const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
@@ -239,6 +260,7 @@ export default function BookingPage() {
         } else {
           throw new Error("Invalid payment response: " + JSON.stringify(paymentData))
         }
+        */
       }
     } catch (error) {
       console.error("Error booking appointment:", error)

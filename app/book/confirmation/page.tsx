@@ -45,7 +45,7 @@ export default function ConfirmationPage() {
       setPaymentStatus("failed")
     } else {
       // If no status is provided, assume success for now
-      // In a real implementation, you would verify with your backend
+      // This is temporary until payment integration is complete
       setPaymentStatus("success")
     }
   }, [searchParams])
