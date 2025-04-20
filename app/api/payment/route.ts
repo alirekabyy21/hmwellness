@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createPaymentUrl, type PaymentDetails } from "@/lib/payment-service"
+import { createPaymentSession, type PaymentDetails } from "@/lib/payment-service"
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,8 +20,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log("Creating payment with details:", body)
+
     // Create payment URL
-    const paymentUrl = await createPaymentUrl(body as PaymentDetails)
+    const paymentUrl = await createPaymentSession(body as PaymentDetails)
 
     // Return success response
     return NextResponse.json({

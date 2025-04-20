@@ -48,6 +48,11 @@ export default function BookingPage() {
     phone: "",
     message: "",
   })
+  const [formErrors, setFormErrors] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  })
   const [promoCode, setPromoCode] = useState("")
   const [promoCodeValid, setPromoCodeValid] = useState(false)
   const [promoCodeError, setPromoCodeError] = useState("")
@@ -88,9 +93,57 @@ export default function BookingPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+
+    // Clear error when user types
+    if (formErrors[name as keyof typeof formErrors]) {
+      setFormErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
+
+  const validateForm = () => {
+    const errors = {
+      name: "",
+      email: "",
+      phone: "",
+    }
+    let isValid = true
+
+    // Validate name (at least 3 characters, letters only)
+    if (formData.name.trim().length < 3) {
+      errors.name = "Name must be at least 3 characters"
+      isValid = false
+    } else if (!/^[A-Za-z\s]+$/.test(formData.name.trim())) {
+      errors.name = "Name should contain only letters"
+      isValid = false
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      errors.email = "Please enter a valid email address"
+      isValid = false
+    }
+
+    // Validate phone (allow international formats)
+    // This regex allows for various international formats
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/
+    if (!phoneRegex.test(formData.phone)) {
+      errors.phone = "Please enter a valid phone number"
+      isValid = false
+    }
+
+    setFormErrors(errors)
+    return isValid
   }
 
   const handleNextStep = () => {
+    if (step === 2) {
+      // Validate form before proceeding to step 3
+      if (!validateForm()) {
+        return
+      }
+    }
+
     setStep(step + 1)
     window.scrollTo(0, 0)
   }
@@ -139,6 +192,12 @@ export default function BookingPage() {
   // Update the handleSubmit function to send confirmation email before payment
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Final validation before submission
+    if (!validateForm()) {
+      return
+    }
+
     setIsSubmitting(true)
     setPaymentError(null)
 
@@ -413,40 +472,48 @@ export default function BookingPage() {
                     )}
                     {step === 2 && (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="name" className="text-base">
-                              Full Name
-                            </Label>
-                            <Input
-                              id="name"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleInputChange}
-                              placeholder="John Doe"
-                              required
-                              className="border-primary/20 focus-visible:ring-primary"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="email" className="text-base">
-                              Email
-                            </Label>
-                            <Input
-                              id="email"
-                              name="email"
-                              type="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                              placeholder="john@example.com"
-                              required
-                              className="border-primary/20 focus-visible:ring-primary"
-                            />
-                          </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="name" className="text-base">
+                            Full Name <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            placeholder="John Doe"
+                            required
+                            className={cn(
+                              "border-primary/20 focus-visible:ring-primary",
+                              formErrors.name && "border-red-500",
+                            )}
+                          />
+                          {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
                         </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="email" className="text-base">
+                            Email <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            placeholder="john@example.com"
+                            required
+                            className={cn(
+                              "border-primary/20 focus-visible:ring-primary",
+                              formErrors.email && "border-red-500",
+                            )}
+                          />
+                          {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                        </div>
+
                         <div className="space-y-2">
                           <Label htmlFor="phone" className="text-base">
-                            Phone Number
+                            Phone Number <span className="text-red-500">*</span>
                           </Label>
                           <Input
                             id="phone"
@@ -454,10 +521,17 @@ export default function BookingPage() {
                             type="tel"
                             value={formData.phone}
                             onChange={handleInputChange}
-                            placeholder="+20 123 456 7890"
+                            placeholder="+20 123 456 7890 or other international format"
                             required
-                            className="border-primary/20 focus-visible:ring-primary"
+                            className={cn(
+                              "border-primary/20 focus-visible:ring-primary",
+                              formErrors.phone && "border-red-500",
+                            )}
                           />
+                          {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Please include your country code (e.g., +20 for Egypt, +1 for US)
+                          </p>
                         </div>
 
                         <div className="space-y-2">
