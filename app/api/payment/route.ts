@@ -19,10 +19,11 @@ export async function POST(request: NextRequest) {
 
     // Get Kashier credentials from environment variables
     const merchantId = process.env.KASHIER_MERCHANT_ID
-    const apiKey = process.env.KASHIER_API_KEY
+    const secretKey = process.env.KASHIER_SECRET_KEY
     const testMode = process.env.NODE_ENV !== "production"
 
-    if (!merchantId || !apiKey) {
+    if (!merchantId || !secretKey) {
+      console.error("Missing Kashier credentials:", { merchantIdExists: !!merchantId, secretKeyExists: !!secretKey })
       return NextResponse.json({ success: false, error: "Missing Kashier credentials" }, { status: 500 })
     }
 
@@ -34,11 +35,13 @@ export async function POST(request: NextRequest) {
     const signatureString = `${merchantId}${formattedAmount}${paymentDetails.currency}${paymentDetails.orderId}`
 
     // Use HMAC-SHA256 with the secret key
-    const signature = crypto.createHmac("sha256", apiKey).update(signatureString).digest("hex")
+    const signature = crypto.createHmac("sha256", secretKey).update(signatureString).digest("hex")
 
-    // Use the test environment endpoint
-    const baseUrl = "https://checkout.kashier.io/"
-    const paymentUrl = new URL(baseUrl)
+    // Get the payment gateway URL from environment variable or use default
+    const paymentGatewayUrl = process.env.NEXT_PUBLIC_PAYMENT_GATEWAY_URL || "https://checkout.kashier.io"
+
+    // Construct the payment URL
+    const paymentUrl = new URL(paymentGatewayUrl)
 
     // Add required parameters
     paymentUrl.searchParams.append("merchantId", merchantId)
@@ -69,6 +72,8 @@ export async function POST(request: NextRequest) {
       }
       paymentUrl.searchParams.append("customer", JSON.stringify(customerData))
     }
+
+    console.log("Generated payment URL:", paymentUrl.toString())
 
     return NextResponse.json({
       success: true,
