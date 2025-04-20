@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer"
+
 export interface EmailOptions {
   to: string
   subject: string
@@ -6,22 +8,29 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    const response = await fetch("/api/send-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    console.log("Sending email to:", options.to)
+
+    // Create a transporter directly in the function to ensure fresh configuration
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_SERVER_HOST,
+      port: Number(process.env.EMAIL_SERVER_PORT),
+      secure: process.env.EMAIL_SERVER_SECURE === "true",
+      auth: {
+        user: process.env.EMAIL_SERVER_USER,
+        pass: process.env.EMAIL_SERVER_PASSWORD,
       },
-      body: JSON.stringify(options),
     })
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error("Email API error:", errorData)
-      return false
-    }
+    // Send the email directly
+    const info = await transporter.sendMail({
+      from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    })
 
-    const data = await response.json()
-    return data.success
+    console.log("Email sent successfully:", info.messageId)
+    return true
   } catch (error) {
     console.error("Error sending email:", error)
     return false
