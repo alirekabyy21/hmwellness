@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createKashierPayment } from "@/lib/kashier-service"
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,7 +6,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    const requiredFields = ["amount", "currency", "orderId", "customerName", "customerEmail", "redirectUrl"]
+    const requiredFields = ["amount", "currency", "orderId", "customerName", "customerEmail"]
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -20,36 +19,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Add customer reference if not provided
+    if (!body.customerReference) {
+      body.customerReference = body.orderId
+    }
+
     console.log("Creating payment with details:", {
       ...body,
       amount: Number(body.amount).toFixed(2),
     })
 
-    // Create payment using Kashier service
-    const paymentResponse = await createKashierPayment({
-      amount: Number(body.amount),
-      currency: body.currency,
-      orderId: body.orderId,
-      customerName: body.customerName,
-      customerEmail: body.customerEmail,
-      customerPhone: body.customerPhone,
-      redirectUrl: body.redirectUrl,
-    })
-
-    if (!paymentResponse.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: paymentResponse.error || "Failed to create payment",
-        },
-        { status: 500 },
-      )
-    }
-
     // Return success response with payment URL
     return NextResponse.json({
       success: true,
-      paymentUrl: paymentResponse.paymentUrl,
+      paymentUrl: `/payment/${body.orderId}`,
+      orderId: body.orderId,
+      // Include all data so it can be stored in session storage
+      paymentData: body,
     })
   } catch (error) {
     console.error("Payment API error:", error)

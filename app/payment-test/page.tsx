@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { v4 as uuidv4 } from "uuid"
+import { useRouter } from "next/navigation"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
@@ -12,15 +13,14 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function PaymentTestPage() {
+  const router = useRouter()
   const [amount, setAmount] = useState("10")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
 
   const handlePayment = async () => {
     setIsLoading(true)
     setError(null)
-    setPaymentUrl(null)
 
     try {
       // Create a unique order ID
@@ -37,8 +37,12 @@ export default function PaymentTestPage() {
         customerName: "Test User",
         customerEmail: "test@example.com",
         customerPhone: "+201234567890",
+        customerReference: orderId,
         redirectUrl,
       }
+
+      // Store payment data in session storage
+      sessionStorage.setItem(`payment_${orderId}`, JSON.stringify(paymentRequest))
 
       // Call the payment API
       const response = await fetch("/api/payment", {
@@ -53,8 +57,9 @@ export default function PaymentTestPage() {
       const data = await response.json()
 
       // Check if the request was successful
-      if (data.success && data.paymentUrl) {
-        setPaymentUrl(data.paymentUrl)
+      if (data.success) {
+        // Redirect to the payment page
+        router.push(data.paymentUrl)
       } else {
         // Handle error
         setError(data.error || "Failed to create payment")
@@ -99,29 +104,13 @@ export default function PaymentTestPage() {
                 </div>
 
                 <div className="text-sm text-muted-foreground">
-                  This will create a test payment with Kashier. You will be redirected to the Kashier payment page.
+                  This will create a test payment with Kashier using the iframe integration.
                 </div>
-
-                {paymentUrl && (
-                  <div className="mt-4 p-3 bg-muted rounded-md">
-                    <h3 className="text-sm font-medium mb-2">Payment URL</h3>
-                    <div className="text-xs break-all overflow-auto max-h-40">{paymentUrl}</div>
-                  </div>
-                )}
               </CardContent>
-              <CardFooter className="flex flex-col gap-4">
+              <CardFooter>
                 <Button onClick={handlePayment} disabled={isLoading} className="w-full">
-                  {isLoading ? "Processing..." : "Generate Payment URL"}
+                  {isLoading ? "Processing..." : "Test Payment"}
                 </Button>
-
-                {paymentUrl && (
-                  <Button
-                    onClick={() => (window.location.href = paymentUrl)}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    Proceed to Payment
-                  </Button>
-                )}
               </CardFooter>
             </Card>
           </div>

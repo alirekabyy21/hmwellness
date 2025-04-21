@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { addDays, format } from "date-fns"
 import { CalendarIcon, Check, ChevronLeft, ChevronRight, Clock, Globe } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -40,6 +41,7 @@ const pricingConfig = {
 }
 
 export default function BookingPage() {
+  const router = useRouter()
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [timeSlot, setTimeSlot] = useState<string>("")
   const [step, setStep] = useState(1)
@@ -216,7 +218,7 @@ export default function BookingPage() {
     return bookingContent.sessionPrice.egypt
   }
 
-  // Update the handleSubmit function to send confirmation email before payment
+  // Update the handleSubmit function to use the iframe payment flow
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -294,9 +296,6 @@ export default function BookingPage() {
         console.log("Email sending result:", emailSuccess)
 
         // PAYMENT SECTION
-        // Create payment using the Kashier service
-        const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
-
         // Calculate the correct amount based on location and promo code
         const amount = userLocation.isEgypt
           ? promoCodeValid && promoCode.toLowerCase() === "test1234"
@@ -308,33 +307,30 @@ export default function BookingPage() {
 
         const currency = userLocation.isEgypt ? "EGP" : "USD"
 
-        // Combine country code with phone number
-        const fullPhoneNumberPayment = `${countryCode}${formData.phone.replace(/^0/, "")}`
-
-        console.log("Creating payment with:", {
+        // Create payment data
+        const paymentData = {
           orderId,
           customerName: formData.name,
           customerEmail: formData.email,
-          customerPhone: fullPhoneNumberPayment,
+          customerPhone: fullPhoneNumber,
+          customerReference: orderId, // Add customer reference
           amount,
           currency,
-          redirectUrl,
-        })
+          description: "60-Minute Coaching Session with Hagar Moharam",
+        }
 
+        console.log("Creating payment with:", paymentData)
+
+        // Store payment data in session storage
+        sessionStorage.setItem(`payment_${orderId}`, JSON.stringify(paymentData))
+
+        // Call the payment API
         const paymentResponse = await fetch("/api/payment", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            orderId,
-            customerName: formData.name,
-            customerEmail: formData.email,
-            customerPhone: fullPhoneNumberPayment,
-            amount,
-            currency,
-            redirectUrl,
-          }),
+          body: JSON.stringify(paymentData),
         })
 
         if (!paymentResponse.ok) {
@@ -343,17 +339,14 @@ export default function BookingPage() {
           throw new Error(`Payment API error: ${errorData.error || "Unknown error"}`)
         }
 
-        const paymentData = await paymentResponse.json()
-        console.log("Payment API response:", paymentData)
+        const paymentResult = await paymentResponse.json()
+        console.log("Payment API response:", paymentResult)
 
-        if (paymentData.success && paymentData.paymentUrl) {
-          // Log the payment URL before redirecting
-          console.log("Redirecting to payment URL:", paymentData.paymentUrl)
-
-          // Redirect to payment page
-          window.location.href = paymentData.paymentUrl
+        if (paymentResult.success) {
+          // Redirect to the payment page
+          router.push(paymentResult.paymentUrl)
         } else {
-          throw new Error("Invalid payment response: " + JSON.stringify(paymentData))
+          throw new Error("Invalid payment response: " + JSON.stringify(paymentResult))
         }
       }
     } catch (error) {
