@@ -1,89 +1,141 @@
 import crypto from "crypto"
 
-// Kashier payment service using iframe model
-export interface KashierPaymentRequest {
+export interface KashierConfig {
+  merchantId: string
+  apiKey: string
+}
+
+export interface PaymentDetails {
   amount: number
   currency: string
-  orderId: string
   customerName: string
   customerEmail: string
   customerPhone?: string
-  customerReference: string // Added customer reference
-  description?: string
-  redirectUrl?: string
-}
-
-export interface KashierPaymentResponse {
-  success: boolean
-  error?: string
-}
-
-/**
- * Generates a hash for Kashier payment
- */
-export function generateKashierHash(
-  merchantId: string,
-  orderId: string,
-  amount: string,
-  currency: string,
-  secretKey: string,
-): string {
-  // Format: merchantId + orderId + amount + currency + secretKey
-  const hashString = `${merchantId}${orderId}${amount}${currency}${secretKey}`
-  return crypto.createHash("sha256").update(hashString).digest("hex")
-}
-
-/**
- * Prepares data for Kashier iframe integration
- */
-export function prepareKashierData(request: KashierPaymentRequest): {
-  merchantId: string
+  description: string
   orderId: string
-  amount: string
-  currency: string
-  hash: string
-  customerReference: string
-  customerName: string
-  customerEmail: string
-  customerPhone?: string
-  description?: string
-  redirectUrl?: string
-} {
-  // Get Kashier credentials from environment variables
-  const merchantId = process.env.KASHIER_MERCHANT_ID || ""
-  const secretKey = process.env.KASHIER_SECRET_KEY || ""
+  redirectUrl: string
+  customerReference?: string
+}
 
-  if (!merchantId || !secretKey) {
+// Get Kashier credentials from environment variables
+const getKashierConfig = (): KashierConfig => {
+  const merchantId = process.env.KASHIER_MERCHANT_ID || process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
+  const apiKey = process.env.KASHIER_SECRET_KEY || process.env.NEXT_PUBLIC_KASHIER_API_KEY
+
+  if (!merchantId || !apiKey) {
     throw new Error("Missing Kashier credentials")
   }
 
-  // Format amount to ensure it has 2 decimal places
-  const formattedAmount = Number(request.amount).toFixed(2)
-
-  // Generate hash
-  const hash = generateKashierHash(merchantId, request.orderId, formattedAmount, request.currency, secretKey)
-
-  // Return data for iframe
   return {
     merchantId,
-    orderId: request.orderId,
-    amount: formattedAmount,
-    currency: request.currency,
-    hash,
-    customerReference: request.customerReference,
-    customerName: request.customerName,
-    customerEmail: request.customerEmail,
-    customerPhone: request.customerPhone,
-    description: request.description,
-    redirectUrl: request.redirectUrl,
+    apiKey,
   }
 }
 
-/**
- * Verifies a Kashier payment
- */
+// Generate a hash for Kashier payment
+export function generateKashierHash(
+  merchantId: string,
+  amount: string,
+  currency: string,
+  orderId: string,
+  apiKey: string,
+): string {
+  // Format: merchantId + amount + currency + orderId + apiKey
+  const hashString = `${merchantId}${amount}${currency}${orderId}${apiKey}`
+  return crypto.createHash("sha256").update(hashString).digest("hex")
+}
+
+// Create a payment URL for Kashier
+export function createKashierPaymentUrl(details: PaymentDetails): string {
+  try {
+    // Get Kashier credentials
+    const config = getKashierConfig()
+
+    // Format amount to ensure it has 2 decimal places
+    const formattedAmount = Number(details.amount).toFixed(2)
+
+    // Generate hash
+    const hash = generateKashierHash(
+      config.merchantId,
+      formattedAmount,
+      details.currency,
+      details.orderId,
+      config.apiKey,
+    )
+
+    // Create customer data
+    const customerData = {
+      name: details.customerName,
+      email: details.customerEmail,
+      phone: details.customerPhone || "",
+    }
+
+    // Construct the payment URL - always use live mode
+    const baseUrl = "https://checkout.kashier.io"
+
+    // Build the URL with required parameters
+    let paymentUrl = `${baseUrl}?merchantId=${config.merchantId}&orderId=${details.orderId}&amount=${formattedAmount}&currency=${details.currency}&hash=${hash}&merchantRedirect=${encodeURIComponent(details.redirectUrl)}&display=en&type=external`
+
+    // Add optional parameters
+    if (details.description) {
+      paymentUrl += `&description=${encodeURIComponent(details.description.substring(0, 120))}`
+    }
+
+    if (details.customerReference) {
+      paymentUrl += `&customerReference=${encodeURIComponent(details.customerReference)}`
+    }
+
+    paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
+
+    // Log the payment URL for debugging
+    console.log("Generated Kashier payment URL:", paymentUrl)
+
+    return paymentUrl
+  } catch (error) {
+    console.error("Error creating Kashier payment URL:", error)
+    throw error
+  }
+}
+
+// Verify a Kashier payment
 export async function verifyKashierPayment(paymentId: string): Promise<boolean> {
   // In a real implementation, you would call the Kashier API to verify a payment
   console.log("Verifying payment with Kashier:", paymentId)
   return true
+}
+
+export function prepareKashierData(details: PaymentDetails) {
+  try {
+    // Get Kashier credentials
+    const config = getKashierConfig()
+
+    // Format amount to ensure it has 2 decimal places
+    const formattedAmount = Number(details.amount).toFixed(2)
+
+    // Generate hash
+    const hash = generateKashierHash(
+      config.merchantId,
+      formattedAmount,
+      details.currency,
+      details.orderId,
+      config.apiKey,
+    )
+
+    return {
+      merchantId: config.merchantId,
+      amount: formattedAmount,
+      currency: details.currency,
+      orderId: details.orderId,
+      hash: hash,
+      customerReference: details.customerReference || details.orderId,
+      customerName: details.customerName,
+      customerEmail: details.customerEmail,
+      customerPhone: details.customerPhone || "",
+      description: details.description || "Coaching Session",
+      redirectUrl: details.redirectUrl,
+    }
+  } catch (error) {
+    console.error("Error preparing Kashier data:", error)
+    throw error
+  }
 }

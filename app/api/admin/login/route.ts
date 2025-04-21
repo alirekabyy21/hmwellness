@@ -1,0 +1,23 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { login } from "@/lib/auth"
+
+export async function POST(request: NextRequest) {
+  try {
+    const { email, password } = await request.json()
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
+    }
+
+    const success = login(email, password)
+
+    if (success) {
+      return NextResponse.json({ success: true })
+    } else {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+    }
+  } catch (error) {
+    console.error("Login error:", error)
+    return NextResponse.json({ error: "An error occurred during login" }, { status: 500 })
+  }
+}

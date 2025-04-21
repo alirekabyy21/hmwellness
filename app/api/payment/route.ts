@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { createKashierPaymentUrl } from "@/lib/kashier-service"
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,23 +20,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Add customer reference if not provided
-    if (!body.customerReference) {
-      body.customerReference = body.orderId
-    }
-
-    console.log("Creating payment with details:", {
-      ...body,
-      amount: Number(body.amount).toFixed(2),
+    // Create payment URL using Kashier service
+    const paymentUrl = createKashierPaymentUrl({
+      amount: body.amount,
+      currency: body.currency,
+      orderId: body.orderId,
+      customerName: body.customerName,
+      customerEmail: body.customerEmail,
+      customerPhone: body.customerPhone,
+      description: body.description || "Coaching Session with Hagar Moharam",
+      redirectUrl: body.redirectUrl || `${request.nextUrl.origin}/book/confirmation?orderId=${body.orderId}`,
+      customerReference: body.customerReference || body.orderId,
     })
 
     // Return success response with payment URL
     return NextResponse.json({
       success: true,
-      paymentUrl: `/payment/${body.orderId}`,
+      paymentUrl,
       orderId: body.orderId,
-      // Include all data so it can be stored in session storage
-      paymentData: body,
     })
   } catch (error) {
     console.error("Payment API error:", error)
