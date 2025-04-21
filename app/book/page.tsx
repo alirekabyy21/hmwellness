@@ -294,7 +294,7 @@ export default function BookingPage() {
         console.log("Email sending result:", emailSuccess)
 
         // PAYMENT SECTION
-        // Create payment using the simplified API
+        // Create payment using the Kashier service
         const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
         // Calculate the correct amount based on location and promo code
@@ -308,10 +308,14 @@ export default function BookingPage() {
 
         const currency = userLocation.isEgypt ? "EGP" : "USD"
 
+        // Combine country code with phone number
+        const fullPhoneNumberPayment = `${countryCode}${formData.phone.replace(/^0/, "")}`
+
         console.log("Creating payment with:", {
           orderId,
           customerName: formData.name,
           customerEmail: formData.email,
+          customerPhone: fullPhoneNumberPayment,
           amount,
           currency,
           redirectUrl,
@@ -326,11 +330,10 @@ export default function BookingPage() {
             orderId,
             customerName: formData.name,
             customerEmail: formData.email,
-            customerPhone: fullPhoneNumber,
+            customerPhone: fullPhoneNumberPayment,
             amount,
             currency,
             redirectUrl,
-            description: "60-Minute Coaching Session with Hagar Moharam",
           }),
         })
 

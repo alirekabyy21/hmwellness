@@ -15,12 +15,12 @@ export default function PaymentTestPage() {
   const [amount, setAmount] = useState("10")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
 
   const handlePayment = async () => {
     setIsLoading(true)
     setError(null)
-    setDebugInfo(null)
+    setPaymentUrl(null)
 
     try {
       // Create a unique order ID
@@ -36,6 +36,7 @@ export default function PaymentTestPage() {
         orderId,
         customerName: "Test User",
         customerEmail: "test@example.com",
+        customerPhone: "+201234567890",
         redirectUrl,
       }
 
@@ -51,16 +52,9 @@ export default function PaymentTestPage() {
       // Parse the response
       const data = await response.json()
 
-      // Store debug info
-      setDebugInfo({
-        request: paymentRequest,
-        response: data,
-      })
-
       // Check if the request was successful
       if (data.success && data.paymentUrl) {
-        // Redirect to the payment URL
-        window.location.href = data.paymentUrl
+        setPaymentUrl(data.paymentUrl)
       } else {
         // Handle error
         setError(data.error || "Failed to create payment")
@@ -108,19 +102,26 @@ export default function PaymentTestPage() {
                   This will create a test payment with Kashier. You will be redirected to the Kashier payment page.
                 </div>
 
-                {debugInfo && (
+                {paymentUrl && (
                   <div className="mt-4 p-3 bg-muted rounded-md">
-                    <h3 className="text-sm font-medium mb-2">Debug Information</h3>
-                    <pre className="text-xs whitespace-pre-wrap overflow-auto">
-                      {JSON.stringify(debugInfo, null, 2)}
-                    </pre>
+                    <h3 className="text-sm font-medium mb-2">Payment URL</h3>
+                    <div className="text-xs break-all overflow-auto max-h-40">{paymentUrl}</div>
                   </div>
                 )}
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col gap-4">
                 <Button onClick={handlePayment} disabled={isLoading} className="w-full">
-                  {isLoading ? "Processing..." : "Test Payment"}
+                  {isLoading ? "Processing..." : "Generate Payment URL"}
                 </Button>
+
+                {paymentUrl && (
+                  <Button
+                    onClick={() => (window.location.href = paymentUrl)}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    Proceed to Payment
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           </div>

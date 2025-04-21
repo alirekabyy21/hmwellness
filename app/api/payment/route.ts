@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createPaymentSession, type PaymentDetails } from "@/lib/payment-service"
+import { createKashierPayment } from "@/lib/kashier-service"
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,18 +20,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("Creating payment with details:", body)
+    console.log("Creating payment with details:", {
+      ...body,
+      amount: Number(body.amount).toFixed(2),
+    })
 
-    // Create payment URL - ensure we're using the live environment
-    const paymentUrl = await createPaymentSession(body as PaymentDetails)
+    // Create payment using Kashier service
+    const paymentResponse = await createKashierPayment({
+      amount: Number(body.amount),
+      currency: body.currency,
+      orderId: body.orderId,
+      customerName: body.customerName,
+      customerEmail: body.customerEmail,
+      customerPhone: body.customerPhone,
+      redirectUrl: body.redirectUrl,
+    })
 
-    // Log the generated URL for debugging
-    console.log("Generated payment URL:", paymentUrl)
+    if (!paymentResponse.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: paymentResponse.error || "Failed to create payment",
+        },
+        { status: 500 },
+      )
+    }
 
-    // Return success response
+    // Return success response with payment URL
     return NextResponse.json({
       success: true,
-      paymentUrl,
+      paymentUrl: paymentResponse.paymentUrl,
     })
   } catch (error) {
     console.error("Payment API error:", error)
@@ -40,7 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: (error as Error).message || "Failed to create payment",
+        error: error instanceof Error ? error.message : "Failed to create payment",
       },
       { status: 500 },
     )
