@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
     // Create a Calendar client
     const calendar = google.calendar({ version: "v3", auth: oauth2Client })
 
+    // Filter out hagarmoharam7@gmail.com from attendees
+    const filteredAttendees = attendees
+      .filter((email: string) => email !== "hagarmoharam7@gmail.com")
+      .map((email: string) => ({ email }))
+
     // Format the event for Google Calendar
     const calendarEvent = {
       summary,
@@ -35,7 +40,7 @@ export async function POST(request: NextRequest) {
         dateTime: new Date(endTime).toISOString(),
         timeZone: "Africa/Cairo",
       },
-      attendees: attendees.map((email: string) => ({ email })),
+      attendees: filteredAttendees,
       conferenceData: {
         createRequest: {
           requestId: `meeting-${Date.now()}`,
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Insert the event
     const response = await calendar.events.insert({
-      calendarId: process.env.GOOGLE_CALENDAR_ID || "primary",
+      calendarId: "hagarmoharam7@gmail.com", // Explicitly set the calendar ID
       requestBody: calendarEvent,
       conferenceDataVersion: 1,
     })

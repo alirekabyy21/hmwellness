@@ -21,7 +21,7 @@ export interface PaymentDetails {
 const kashierConfig: KashierConfig = {
   apiKey: process.env.KASHIER_SECRET_KEY || "",
   merchantId: process.env.KASHIER_MERCHANT_ID || "",
-  testMode: true, // Always use test mode for now
+  testMode: process.env.NODE_ENV !== "production", // Use test mode only in development
 }
 
 export async function createPaymentSession(details: PaymentDetails): Promise<string> {
@@ -36,7 +36,7 @@ export async function createPaymentSession(details: PaymentDetails): Promise<str
     // Use HMAC-SHA256 with the secret key
     const signature = crypto.createHmac("sha256", kashierConfig.apiKey).update(signatureString).digest("hex")
 
-    // Use the test environment endpoint
+    // Use the appropriate endpoint
     const baseUrl = "https://checkout.kashier.io/"
 
     // Construct the payment URL with all required parameters
@@ -50,8 +50,10 @@ export async function createPaymentSession(details: PaymentDetails): Promise<str
     paymentUrl.searchParams.append("signature", signature)
     paymentUrl.searchParams.append("redirectUrl", details.redirectUrl)
 
-    // Always use test mode
-    paymentUrl.searchParams.append("mode", "test")
+    // Add mode parameter for test environment only if in test mode
+    if (kashierConfig.testMode) {
+      paymentUrl.searchParams.append("mode", "test")
+    }
 
     // Add display language
     paymentUrl.searchParams.append("display", "en")

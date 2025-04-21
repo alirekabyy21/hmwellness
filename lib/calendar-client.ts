@@ -15,6 +15,9 @@ export interface CalendarEventResult {
 // Client-side function to create a calendar event
 export async function createCalendarEvent(eventData: CalendarEventData): Promise<CalendarEventResult> {
   try {
+    // Filter out hagarmoharam7@gmail.com from attendees
+    const filteredAttendees = eventData.attendees.filter((email) => email !== "hagarmoharam7@gmail.com")
+
     const response = await fetch("/api/calendar/create", {
       method: "POST",
       headers: {
@@ -25,7 +28,7 @@ export async function createCalendarEvent(eventData: CalendarEventData): Promise
         description: eventData.description,
         startTime: eventData.startTime.toISOString(),
         endTime: eventData.endTime.toISOString(),
-        attendees: eventData.attendees,
+        attendees: filteredAttendees,
       }),
     })
 

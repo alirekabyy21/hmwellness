@@ -51,7 +51,15 @@ export async function createCalendarEvent(event: CalendarEvent): Promise<{
         dateTime: event.endTime.toISOString(),
         timeZone: "Africa/Cairo",
       },
-      attendees: event.attendees.map((email) => ({ email })),
+      attendees: event.attendees
+        .map((email) => {
+          // Don't include hagarmoharam7@gmail.com as an attendee since it's the calendar owner
+          if (email === "hagarmoharam7@gmail.com") {
+            return null
+          }
+          return { email }
+        })
+        .filter(Boolean),
       conferenceData: {
         createRequest: {
           requestId: `meeting-${Date.now()}`,
@@ -64,7 +72,7 @@ export async function createCalendarEvent(event: CalendarEvent): Promise<{
 
     // Insert the event
     const response = await calendar.events.insert({
-      calendarId: process.env.GOOGLE_CALENDAR_ID || "hagarmoharam7@gmail.com",
+      calendarId: "hagarmoharam7@gmail.com", // Explicitly set the calendar ID
       requestBody: calendarEvent,
       conferenceDataVersion: 1,
     })

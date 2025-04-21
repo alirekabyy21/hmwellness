@@ -35,7 +35,7 @@ const pricingConfig = {
     student: 400,
   },
   international: {
-    regular: 75,
+    regular: 30,
   },
 }
 
@@ -179,6 +179,8 @@ export default function BookingPage() {
     // Check if the promo code is valid
     if (promoCode.toLowerCase() === "student") {
       setPromoCodeValid(true)
+    } else if (promoCode.toLowerCase() === "test1234") {
+      setPromoCodeValid(true)
     } else {
       setPromoCodeValid(false)
       if (promoCode) {
@@ -199,6 +201,11 @@ export default function BookingPage() {
   const getPrice = () => {
     if (!userLocation.isEgypt) {
       return bookingContent.sessionPrice.international
+    }
+
+    // Apply test promo code for 5 EGP
+    if (promoCodeValid && promoCode.toLowerCase() === "test1234") {
+      return "5 EGP"
     }
 
     // Apply student discount if promo code is valid
@@ -238,17 +245,16 @@ export default function BookingPage() {
         const endTime = new Date(startTime)
         endTime.setHours(endTime.getHours() + 1)
 
-        // Add this before creating the calendar event
         // Combine country code with phone number
         const fullPhoneNumber = `${countryCode}${formData.phone.replace(/^0/, "")}`
 
-        // Then update the calendarEvent creation to use fullPhoneNumber
+        // Create the calendar event
         const calendarEvent = await createCalendarEvent({
           summary: `${formData.name}'s Coaching Session`,
           description: `Service: 60-Minute Coaching Session\nClient: ${formData.name}\nPhone: ${fullPhoneNumber}\nNotes: ${formData.message}`,
           startTime,
           endTime,
-          attendees: [formData.email, "hagarmoharam7@gmail.com"], // Add the coach's email
+          attendees: [formData.email], // Don't include hagarmoharam7@gmail.com as an attendee
         })
 
         setMeetingLink(calendarEvent.meetingLink)
@@ -286,12 +292,7 @@ export default function BookingPage() {
 
         console.log("Email sending result:", emailSuccess)
 
-        // Remove the temporary skip payment section
-        // setIsBooked(true);
-        // setIsSubmitting(false);
-        // return;
-
-        // PAYMENT SECTION - Now enabled
+        // PAYMENT SECTION
         // Create payment using the simplified API
         const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
@@ -300,9 +301,11 @@ export default function BookingPage() {
           customerName: formData.name,
           customerEmail: formData.email,
           amount: userLocation.isEgypt
-            ? promoCodeValid
-              ? pricingConfig.egypt.student
-              : pricingConfig.egypt.regular
+            ? promoCodeValid && promoCode.toLowerCase() === "test1234"
+              ? 5 // Use 5 EGP for test1234 promo code
+              : promoCodeValid
+                ? pricingConfig.egypt.student
+                : pricingConfig.egypt.regular
             : pricingConfig.international.regular,
           currency: userLocation.isEgypt ? "EGP" : "USD",
           redirectUrl,
@@ -318,9 +321,11 @@ export default function BookingPage() {
             customerName: formData.name,
             customerEmail: formData.email,
             amount: userLocation.isEgypt
-              ? promoCodeValid
-                ? pricingConfig.egypt.student
-                : pricingConfig.egypt.regular
+              ? promoCodeValid && promoCode.toLowerCase() === "test1234"
+                ? 5 // Use 5 EGP for test1234 promo code
+                : promoCodeValid
+                  ? pricingConfig.egypt.student
+                  : pricingConfig.egypt.regular
               : pricingConfig.international.regular,
             currency: userLocation.isEgypt ? "EGP" : "USD",
             redirectUrl,

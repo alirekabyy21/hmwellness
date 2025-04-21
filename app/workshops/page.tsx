@@ -1,4 +1,3 @@
-// Ensure "use client" is the first line of the file
 "use client"
 
 import type React from "react"
@@ -58,7 +57,6 @@ export default function WorkshopsPage() {
 
 // Client component for the notification signup
 function NotificationSignup() {
-  "use client"  // Ensure this is a Client Component
   const [email, setEmail] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
