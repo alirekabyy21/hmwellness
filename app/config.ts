@@ -4,7 +4,8 @@ export const siteConfig = {
   tagline: "Transform Your Life with Professional Coaching", // Main tagline
   description:
     "Discover your true potential with Hagar Moharam, a certified life coach dedicated to helping you achieve your goals and live a more fulfilling life.",
-  email: "hello@hmwellness.com",
+  email: "hagar@hmwellness.site", // Updated email
+  domain: "hmwellness.site", // New domain
   phone: "+20 123 456 7890",
   address: {
     street: "123 Coaching Street",
@@ -378,4 +379,12 @@ export const pricingConfig = {
     regular: 30,
     currency: "USD",
   },
+}
+
+// Email configuration
+export const emailConfig = {
+  from: "HM Wellness <hagar@hmwellness.site>",
+  replyTo: "hagar@hmwellness.site",
+  contactEmail: "hagar@hmwellness.site",
+  supportEmail: "support@hmwellness.site",
 }

@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { sendEmail } from "@/lib/email-service"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { sendEmail, generateTestEmail } from "@/lib/email-service"
+import { siteConfig } from "@/app/config"
 
 export default function EmailTestPage() {
   const [email, setEmail] = useState("")
@@ -29,26 +31,7 @@ export default function EmailTestPage() {
       const success = await sendEmail({
         to: email,
         subject: "Test Email from HM Wellness",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #8a2be2; color: white; padding: 20px; text-align: center;">
-              <h1 style="margin: 0;">HM Wellness</h1>
-              <p style="margin: 10px 0 0;">Test Email</p>
-            </div>
-            
-            <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
-              <p>Hello,</p>
-              
-              <p>This is a test email from HM Wellness website.</p>
-              
-              <p>If you received this email, it means the email functionality is working correctly.</p>
-              
-              <p>Time sent: ${new Date().toLocaleString()}</p>
-              
-              <p>Warm regards,<br>HM Wellness Team</p>
-            </div>
-          </div>
-        `,
+        html: generateTestEmail(),
       })
 
       if (success) {
@@ -96,7 +79,7 @@ export default function EmailTestPage() {
                   </div>
 
                   {status !== "idle" && (
-                    <div
+                    <Alert
                       className={`p-3 rounded-md ${
                         status === "loading"
                           ? "bg-blue-50 text-blue-700"
@@ -105,13 +88,19 @@ export default function EmailTestPage() {
                             : "bg-red-50 text-red-700"
                       }`}
                     >
-                      {message}
-                    </div>
+                      <AlertDescription>{message}</AlertDescription>
+                    </Alert>
                   )}
 
                   <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Email Configuration Status</h3>
+                    <h3 className="text-sm font-medium">Email Configuration</h3>
                     <div className="text-xs space-y-1 bg-gray-50 p-3 rounded-md">
+                      <p>
+                        <strong>Domain:</strong> {siteConfig.domain}
+                      </p>
+                      <p>
+                        <strong>Email:</strong> {siteConfig.email}
+                      </p>
                       <p>
                         <strong>EMAIL_SERVER_HOST:</strong> {process.env.EMAIL_SERVER_HOST ? "✓ Set" : "✗ Not set"}
                       </p>
@@ -124,6 +113,13 @@ export default function EmailTestPage() {
                       <p>
                         <strong>EMAIL_FROM_ADDRESS:</strong> {process.env.EMAIL_FROM_ADDRESS ? "✓ Set" : "✗ Not set"}
                       </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Email Template Preview</h3>
+                    <div className="border rounded-md p-3 max-h-40 overflow-auto">
+                      <div dangerouslySetInnerHTML={{ __html: generateTestEmail() }} />
                     </div>
                   </div>
                 </div>
