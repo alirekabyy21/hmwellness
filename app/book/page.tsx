@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/layout/site-header"
-import { SiteFooter } from "@/components/layout/site-header"
+import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
 import { bookingContent } from "../config"
 import { createCalendarEvent, getAvailableSlots } from "@/lib/calendar-client"
@@ -145,7 +145,7 @@ export default function BookingPage() {
       }
     } else {
       // International phone validation (more permissive but still requires numbers)
-      const cleanPhone = formData.phone.replace(/\s+|-|$$|$$/g, "")
+      const cleanPhone = formData.phone.replace(/\s+|-|$|$/g, "")
       if (!/^[0-9]{6,15}$/.test(cleanPhone)) {
         errors.phone = "Please enter a valid phone number"
         isValid = false
@@ -700,7 +700,13 @@ export default function BookingPage() {
                             <div className="flex justify-between font-medium">
                               <span>Total:</span>
                               <div>
-                                {promoCodeValid && userLocation.isEgypt && (
+                                {promoCodeValid && userLocation.isEgypt && promoCode.toLowerCase() === "test1234" && (
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-sm line-through text-muted-foreground">600 EGP</span>
+                                    <span className="text-primary">5 EGP</span>
+                                  </div>
+                                )}
+                                {promoCodeValid && userLocation.isEgypt && promoCode.toLowerCase() === "student" && (
                                   <div className="flex flex-col items-end">
                                     <span className="text-sm line-through text-muted-foreground">600 EGP</span>
                                     <span className="text-primary">400 EGP</span>

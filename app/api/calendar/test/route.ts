@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { google } from "googleapis"
 import { OAuth2Client } from "google-auth-library"
 
+// Add export config to make this route dynamic
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   try {
     // Set up OAuth2 client with credentials
