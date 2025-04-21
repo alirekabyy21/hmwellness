@@ -17,13 +17,14 @@ export interface PaymentDetails {
   redirectUrl: string
 }
 
-// This would be set from environment variables
+// Update the kashierConfig to ensure it's using live mode in production
 const kashierConfig: KashierConfig = {
   apiKey: process.env.KASHIER_SECRET_KEY || "",
   merchantId: process.env.KASHIER_MERCHANT_ID || "",
-  testMode: process.env.NODE_ENV !== "production", // Use test mode only in development
+  testMode: false, // Always use live mode
 }
 
+// Update the createPaymentSession function to ensure it's using the live URL
 export async function createPaymentSession(details: PaymentDetails): Promise<string> {
   try {
     // Format amount to ensure it has 2 decimal places
@@ -36,7 +37,7 @@ export async function createPaymentSession(details: PaymentDetails): Promise<str
     // Use HMAC-SHA256 with the secret key
     const signature = crypto.createHmac("sha256", kashierConfig.apiKey).update(signatureString).digest("hex")
 
-    // Use the appropriate endpoint
+    // Use the live environment endpoint
     const baseUrl = "https://checkout.kashier.io/"
 
     // Construct the payment URL with all required parameters
@@ -50,10 +51,8 @@ export async function createPaymentSession(details: PaymentDetails): Promise<str
     paymentUrl.searchParams.append("signature", signature)
     paymentUrl.searchParams.append("redirectUrl", details.redirectUrl)
 
-    // Add mode parameter for test environment only if in test mode
-    if (kashierConfig.testMode) {
-      paymentUrl.searchParams.append("mode", "test")
-    }
+    // Remove test mode parameter completely
+    // No mode=test parameter should be added
 
     // Add display language
     paymentUrl.searchParams.append("display", "en")
@@ -81,8 +80,9 @@ export async function createPaymentSession(details: PaymentDetails): Promise<str
   }
 }
 
+// Update the getKashierScriptUrl function to always return the live URL
 export function getKashierScriptUrl(): string {
-  return kashierConfig.testMode ? "https://test.kashier.io/kashier.js" : "https://checkout.kashier.io/kashier.js"
+  return "https://checkout.kashier.io/kashier.js"
 }
 
 export async function verifyPayment(paymentId: string): Promise<boolean> {

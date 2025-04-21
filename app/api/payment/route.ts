@@ -22,8 +22,11 @@ export async function POST(request: NextRequest) {
 
     console.log("Creating payment with details:", body)
 
-    // Create payment URL
+    // Create payment URL - ensure we're using the live environment
     const paymentUrl = await createPaymentSession(body as PaymentDetails)
+
+    // Log the generated URL for debugging
+    console.log("Generated payment URL:", paymentUrl)
 
     // Return success response
     return NextResponse.json({

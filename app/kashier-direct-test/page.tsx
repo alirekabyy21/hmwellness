@@ -62,15 +62,14 @@ export default function KashierDirectTestPage() {
       const data = await response.json()
       setSignature(data.signature)
 
-      // Create payment URL
-      const url = new URL(process.env.NEXT_PUBLIC_PAYMENT_GATEWAY_URL || "https://checkout.kashier.io")
+      // Create payment URL - using live environment
+      const url = new URL("https://checkout.kashier.io")
       url.searchParams.append("merchantId", merchantId)
       url.searchParams.append("amount", amount)
       url.searchParams.append("currency", currency)
       url.searchParams.append("orderId", orderId)
       url.searchParams.append("signature", data.signature)
       url.searchParams.append("redirectUrl", redirectUrl)
-      url.searchParams.append("mode", "test")
       url.searchParams.append("display", "en")
 
       setPaymentUrl(url.toString())

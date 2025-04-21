@@ -231,6 +231,7 @@ export default function BookingPage() {
     try {
       // Create a unique order ID
       const orderId = uuidv4()
+      console.log(`Generated order ID: ${orderId}`)
 
       // Create calendar event
       if (date && timeSlot) {
@@ -296,18 +297,23 @@ export default function BookingPage() {
         // Create payment using the simplified API
         const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
 
+        // Calculate the correct amount based on location and promo code
+        const amount = userLocation.isEgypt
+          ? promoCodeValid && promoCode.toLowerCase() === "test1234"
+            ? 5 // Use 5 EGP for test1234 promo code
+            : promoCodeValid
+              ? pricingConfig.egypt.student
+              : pricingConfig.egypt.regular
+          : pricingConfig.international.regular
+
+        const currency = userLocation.isEgypt ? "EGP" : "USD"
+
         console.log("Creating payment with:", {
           orderId,
           customerName: formData.name,
           customerEmail: formData.email,
-          amount: userLocation.isEgypt
-            ? promoCodeValid && promoCode.toLowerCase() === "test1234"
-              ? 5 // Use 5 EGP for test1234 promo code
-              : promoCodeValid
-                ? pricingConfig.egypt.student
-                : pricingConfig.egypt.regular
-            : pricingConfig.international.regular,
-          currency: userLocation.isEgypt ? "EGP" : "USD",
+          amount,
+          currency,
           redirectUrl,
         })
 
@@ -320,15 +326,11 @@ export default function BookingPage() {
             orderId,
             customerName: formData.name,
             customerEmail: formData.email,
-            amount: userLocation.isEgypt
-              ? promoCodeValid && promoCode.toLowerCase() === "test1234"
-                ? 5 // Use 5 EGP for test1234 promo code
-                : promoCodeValid
-                  ? pricingConfig.egypt.student
-                  : pricingConfig.egypt.regular
-              : pricingConfig.international.regular,
-            currency: userLocation.isEgypt ? "EGP" : "USD",
+            customerPhone: fullPhoneNumber,
+            amount,
+            currency,
             redirectUrl,
+            description: "60-Minute Coaching Session with Hagar Moharam",
           }),
         })
 
@@ -342,6 +344,9 @@ export default function BookingPage() {
         console.log("Payment API response:", paymentData)
 
         if (paymentData.success && paymentData.paymentUrl) {
+          // Log the payment URL before redirecting
+          console.log("Redirecting to payment URL:", paymentData.paymentUrl)
+
           // Redirect to payment page
           window.location.href = paymentData.paymentUrl
         } else {
