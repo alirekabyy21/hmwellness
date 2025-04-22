@@ -13,9 +13,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { summary, description, startTime, endTime, attendees } = body as CalendarEvent
 
-    // Log the request for debugging
-    console.log("Calendar API request:", { summary, description, startTime, endTime, attendees })
-
     // In a real implementation, this would call the Google Calendar API
     // to create an event and generate a Google Meet link
     console.log("Creating calendar event:", { summary, description, startTime, endTime, attendees })

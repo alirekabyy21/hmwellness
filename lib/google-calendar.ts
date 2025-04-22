@@ -13,15 +13,6 @@ export async function createCalendarEvent(event: CalendarEvent): Promise<{
   calendarEventLink: string
 }> {
   try {
-    // Log the event details for debugging
-    console.log("Creating calendar event with:", {
-      summary: event.summary,
-      description: event.description,
-      startTime: event.startTime.toISOString(),
-      endTime: event.endTime.toISOString(),
-      attendees: event.attendees,
-    })
-
     const response = await fetch("/api/calendar", {
       method: "POST",
       headers: {

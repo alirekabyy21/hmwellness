@@ -8,7 +8,7 @@ export interface PaymentDetails {
   customerName: string
   customerEmail: string
   redirectUrl: string
-  customerReference?: string // Added customer reference
+  customerReference?: string
 }
 
 // Generate a numeric order ID (10 digits)
@@ -50,9 +50,6 @@ export async function createPaymentUrl(details: PaymentDetails): Promise<string>
     paymentUrl.searchParams.append("orderId", details.orderId)
     paymentUrl.searchParams.append("signature", signature)
 
-    // Do NOT use test mode for production
-    // paymentUrl.searchParams.append("mode", "test")
-
     // Add redirect URL
     paymentUrl.searchParams.append("redirectUrl", details.redirectUrl)
 
@@ -63,7 +60,7 @@ export async function createPaymentUrl(details: PaymentDetails): Promise<string>
     const customerData = {
       name: details.customerName,
       email: details.customerEmail,
-      reference: details.customerReference || `REF-${details.orderId}`, // Add customer reference
+      reference: details.customerReference || `REF-${details.orderId}`,
     }
     paymentUrl.searchParams.append("customer", JSON.stringify(customerData))
 

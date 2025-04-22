@@ -3,16 +3,16 @@ import crypto from "crypto"
 // Kashier payment gateway configuration
 export const kashierConfig = {
   merchantId: "MID-33722-173",
-  apiKey: "1f175f51-baea-4497-bba2-fbcb9a530abb",
+  apiKey: "75a1d1db-ce72-4e8c-92ac-c5d5b4a1f0dd",
   secretKey:
-    "ea88d1dd8c266c5b7501ec8d68c97a91$6abfe0ea86ba0ea798701694eaeddfffd23eff7dac790f4605366dee4b947c86a8ce980827de0cbb52a5ae53393e5c8e",
-  baseUrl: "https://payments.kashier.io",
-  mode: "test", // Change to "live" for production
+    "2d0ef469d6dce13a79a8f01beb657eca$77e043baa0750dc63359cb868d98c2d2a38a26fc2b7889975874567ec4a5173a7cdde8dd599718169d1bd17ee4c5a78e",
+  baseUrl: "https://checkout.kashier.io",
+  mode: "live", // Change to "live" for production
   currency: "EGP",
-  display: "popup", // or "page" for full page redirect
-  successRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness-kopz.vercel.app"}/payment/success`,
-  failureRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness-kopz.vercel.app"}/payment/failure`,
-  webhookUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness-kopz.vercel.app"}/api/payment/webhook`,
+  display: "page", // or "page" for full page redirect
+  successRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness.site"}/payment/success`,
+  failureRedirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness.site"}/payment/failure`,
+  webhookUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness.site"}/api/payment/webhook`,
 }
 
 // Generate a unique order ID

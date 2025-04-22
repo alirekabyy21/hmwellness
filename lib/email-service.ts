@@ -8,15 +8,6 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     console.log("Attempting to send email to:", options.to)
 
-    // Check if we're in a browser environment
-    if (typeof window !== "undefined") {
-      console.log("Email details (client-side):", {
-        to: options.to,
-        subject: options.subject,
-        htmlLength: options.html.length,
-      })
-    }
-
     const response = await fetch("/api/send-email", {
       method: "POST",
       headers: {

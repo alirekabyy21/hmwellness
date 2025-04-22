@@ -4,8 +4,8 @@ export const siteConfig = {
   tagline: "Transform Your Life with Professional Coaching", // Main tagline
   description:
     "Discover your true potential with Hagar Moharam, a certified life coach dedicated to helping you achieve your goals and live a more fulfilling life.",
-  email: "hagar@hmwellness.site", // Updated email
-  domain: "hmwellness.site", // New domain
+  email: "hagar@hmwellness.site", // Email
+  domain: "hmwellness.site", // Domain
   phone: "+20 123 456 7890",
   address: {
     street: "123 Coaching Street",
@@ -329,11 +329,44 @@ export const workshopsContent = {
     title: "Workshops",
     description: "Join our transformative workshops designed to help you grow and develop new skills.",
   },
-  emptyState: {
-    title: "Coming Soon",
-    description:
-      "We're currently planning exciting workshops to help you on your personal development journey. Sign up for our newsletter to be the first to know when new workshops are available.",
-  },
+  workshops: [
+    {
+      id: "workshop-1",
+      title: "Mindfulness for Everyday Life",
+      date: "June 15, 2024",
+      time: "10:00 AM - 1:00 PM",
+      location: "Online via Zoom",
+      price: "300 EGP",
+      description: "Learn practical mindfulness techniques to reduce stress and increase focus in your daily life.",
+      image: "/placeholder.svg?height=300&width=500",
+      spots: 20,
+      spotsLeft: 8,
+    },
+    {
+      id: "workshop-2",
+      title: "Goal Setting Masterclass",
+      date: "July 10, 2024",
+      time: "6:00 PM - 8:00 PM",
+      location: "Online via Zoom",
+      price: "250 EGP",
+      description: "Discover how to set meaningful goals and create actionable plans to achieve them.",
+      image: "/placeholder.svg?height=300&width=500",
+      spots: 15,
+      spotsLeft: 5,
+    },
+    {
+      id: "workshop-3",
+      title: "Building Healthy Relationships",
+      date: "August 5, 2024",
+      time: "11:00 AM - 2:00 PM",
+      location: "Online via Zoom",
+      price: "350 EGP",
+      description: "Learn effective communication skills and strategies for building healthier relationships.",
+      image: "/placeholder.svg?height=300&width=500",
+      spots: 25,
+      spotsLeft: 15,
+    },
+  ],
 }
 
 // Arabic Content
@@ -373,11 +406,10 @@ export const pricingConfig = {
   egypt: {
     regular: 600,
     student: 400,
-    test: 5, // Added test price for promo code
     currency: "EGP",
   },
   international: {
-    regular: 30, // Updated to $30 instead of $75
+    regular: 30,
     currency: "USD",
   },
 }
@@ -389,9 +421,10 @@ export const promoCodes = {
     discount: "student",
     description: "Student Discount",
   },
-  test: {
-    code: "test1234",
-    discount: "test",
-    description: "Test Payment (5 EGP)",
-  },
+}
+
+// Admin configuration
+export const adminConfig = {
+  email: "alirekaby01@gmail.com",
+  passwordHash: "5f4dcc3b5aa765d61d8327deb882cf99", // This is just a placeholder, we'll use a secure auth method
 }
