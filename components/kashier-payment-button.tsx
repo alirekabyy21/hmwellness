@@ -39,6 +39,7 @@ export function KashierPaymentButton({
     // Get Kashier credentials from environment variables
     const merchantId = process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
     const apiKey = process.env.NEXT_PUBLIC_KASHIER_API_KEY
+    const testMode = process.env.NODE_ENV !== "production"
 
     if (!merchantId || !apiKey) {
       console.error("Missing Kashier credentials")
@@ -58,10 +59,10 @@ export function KashierPaymentButton({
     }
 
     // Construct the payment URL
-    const baseUrl = "https://checkout.kashier.io"
+    const baseUrl = "https://payments.kashier.io"
 
     // Build the URL with required parameters
-    let paymentUrl = `${baseUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${amount}&currency=${currency}&hash=${hash}&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
+    let paymentUrl = `${baseUrl}?merchantId=${merchantId}&orderId=${orderId}&amount=${amount}&currency=${currency}&hash=${hash}&mode=${testMode ? "test" : "live"}&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`
 
     // Add optional parameters
     if (description) {

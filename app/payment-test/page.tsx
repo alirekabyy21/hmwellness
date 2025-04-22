@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { v4 as uuidv4 } from "uuid"
-import { useRouter } from "next/navigation"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
@@ -13,14 +12,15 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function PaymentTestPage() {
-  const router = useRouter()
   const [amount, setAmount] = useState("10")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
 
   const handlePayment = async () => {
     setIsLoading(true)
     setError(null)
+    setDebugInfo(null)
 
     try {
       // Create a unique order ID
@@ -36,13 +36,8 @@ export default function PaymentTestPage() {
         orderId,
         customerName: "Test User",
         customerEmail: "test@example.com",
-        customerPhone: "+201234567890",
-        customerReference: orderId,
         redirectUrl,
       }
-
-      // Store payment data in session storage
-      sessionStorage.setItem(`payment_${orderId}`, JSON.stringify(paymentRequest))
 
       // Call the payment API
       const response = await fetch("/api/payment", {
@@ -56,10 +51,16 @@ export default function PaymentTestPage() {
       // Parse the response
       const data = await response.json()
 
+      // Store debug info
+      setDebugInfo({
+        request: paymentRequest,
+        response: data,
+      })
+
       // Check if the request was successful
-      if (data.success) {
-        // Redirect to the payment page
-        router.push(data.paymentUrl)
+      if (data.success && data.paymentUrl) {
+        // Redirect to the payment URL
+        window.location.href = data.paymentUrl
       } else {
         // Handle error
         setError(data.error || "Failed to create payment")
@@ -104,8 +105,17 @@ export default function PaymentTestPage() {
                 </div>
 
                 <div className="text-sm text-muted-foreground">
-                  This will create a test payment with Kashier using the iframe integration.
+                  This will create a test payment with Kashier. You will be redirected to the Kashier payment page.
                 </div>
+
+                {debugInfo && (
+                  <div className="mt-4 p-3 bg-muted rounded-md">
+                    <h3 className="text-sm font-medium mb-2">Debug Information</h3>
+                    <pre className="text-xs whitespace-pre-wrap overflow-auto">
+                      {JSON.stringify(debugInfo, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </CardContent>
               <CardFooter>
                 <Button onClick={handlePayment} disabled={isLoading} className="w-full">

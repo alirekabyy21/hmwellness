@@ -373,18 +373,25 @@ export const pricingConfig = {
   egypt: {
     regular: 600,
     student: 400,
+    test: 5, // Added test price for promo code
     currency: "EGP",
   },
   international: {
-    regular: 30,
+    regular: 30, // Updated to $30 instead of $75
     currency: "USD",
   },
 }
 
-// Email configuration
-export const emailConfig = {
-  from: "HM Wellness <hagar@hmwellness.site>",
-  replyTo: "hagar@hmwellness.site",
-  contactEmail: "hagar@hmwellness.site",
-  supportEmail: "support@hmwellness.site",
+// Promo codes configuration
+export const promoCodes = {
+  student: {
+    code: "student",
+    discount: "student",
+    description: "Student Discount",
+  },
+  test: {
+    code: "test1234",
+    discount: "test",
+    description: "Test Payment (5 EGP)",
+  },
 }

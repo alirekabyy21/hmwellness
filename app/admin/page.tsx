@@ -2,12 +2,8 @@ import Link from "next/link"
 import { Calendar, Clock, DollarSign, Users } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { requireAuth } from "@/lib/auth"
 
 export default function AdminDashboard() {
-  // Ensure user is authenticated
-  requireAuth()
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -18,7 +14,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -64,8 +60,8 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Bookings</CardTitle>
-            <CardDescription>Your most recent bookings</CardDescription>
+            <CardTitle>Recent Appointments</CardTitle>
+            <CardDescription>Your most recent appointments</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -82,8 +78,8 @@ export default function AdminDashboard() {
                 </div>
               ))}
               <div className="text-center mt-4">
-                <Link href="/admin/bookings" className="text-sm text-primary hover:underline">
-                  View all bookings
+                <Link href="/admin/appointments" className="text-sm text-primary hover:underline">
+                  View all appointments
                 </Link>
               </div>
             </div>

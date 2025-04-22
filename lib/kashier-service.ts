@@ -1,8 +1,9 @@
 import crypto from "crypto"
 
 export interface KashierConfig {
-  merchantId: string
   apiKey: string
+  merchantId: string
+  testMode: boolean
 }
 
 export interface PaymentDetails {
@@ -14,128 +15,78 @@ export interface PaymentDetails {
   description: string
   orderId: string
   redirectUrl: string
-  customerReference?: string
 }
 
-// Get Kashier credentials from environment variables
-const getKashierConfig = (): KashierConfig => {
-  const merchantId = process.env.KASHIER_MERCHANT_ID || process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID
-  const apiKey = process.env.KASHIER_SECRET_KEY || process.env.NEXT_PUBLIC_KASHIER_API_KEY
-
-  if (!merchantId || !apiKey) {
-    throw new Error("Missing Kashier credentials")
-  }
-
-  return {
-    merchantId,
-    apiKey,
-  }
+// This would be set from environment variables
+const kashierConfig: KashierConfig = {
+  apiKey: process.env.NEXT_PUBLIC_KASHIER_API_KEY || "",
+  merchantId: process.env.NEXT_PUBLIC_KASHIER_MERCHANT_ID || "",
+  testMode: process.env.NODE_ENV !== "production",
 }
 
-// Generate a hash for Kashier payment
-export function generateKashierHash(
-  merchantId: string,
-  amount: string,
-  currency: string,
-  orderId: string,
-  apiKey: string,
-): string {
-  // Format: merchantId + amount + currency + orderId + apiKey
-  const hashString = `${merchantId}${amount}${currency}${orderId}${apiKey}`
-  return crypto.createHash("sha256").update(hashString).digest("hex")
-}
-
-// Create a payment URL for Kashier
-export function createKashierPaymentUrl(details: PaymentDetails): string {
+export async function createPaymentSession(details: PaymentDetails): Promise<string> {
   try {
-    // Get Kashier credentials
-    const config = getKashierConfig()
-
     // Format amount to ensure it has 2 decimal places
     const formattedAmount = Number(details.amount).toFixed(2)
 
-    // Generate hash
-    const hash = generateKashierHash(
-      config.merchantId,
-      formattedAmount,
-      details.currency,
-      details.orderId,
-      config.apiKey,
-    )
+    // Generate signature using HMAC-SHA256
+    // Format: merchantId + amount + currency + orderId
+    const signatureString = `${kashierConfig.merchantId}${formattedAmount}${details.currency}${details.orderId}`
 
-    // Create customer data
-    const customerData = {
-      name: details.customerName,
-      email: details.customerEmail,
-      phone: details.customerPhone || "",
+    // Use HMAC-SHA256 with the secret key
+    const signature = crypto.createHmac("sha256", kashierConfig.apiKey).update(signatureString).digest("hex")
+
+    // Use the test environment endpoint
+    const baseUrl = "https://checkout.kashier.io/"
+
+    // Construct the payment URL with all required parameters
+    const paymentUrl = new URL(baseUrl)
+
+    // Add required parameters
+    paymentUrl.searchParams.append("merchantId", kashierConfig.merchantId)
+    paymentUrl.searchParams.append("amount", formattedAmount)
+    paymentUrl.searchParams.append("currency", details.currency)
+    paymentUrl.searchParams.append("orderId", details.orderId)
+    paymentUrl.searchParams.append("signature", signature)
+    paymentUrl.searchParams.append("redirectUrl", details.redirectUrl)
+
+    // Add mode parameter for test environment
+    if (kashierConfig.testMode) {
+      paymentUrl.searchParams.append("mode", "test")
     }
 
-    // Construct the payment URL - always use live mode
-    const baseUrl = "https://checkout.kashier.io"
+    // Add display language
+    paymentUrl.searchParams.append("display", "en")
 
-    // Build the URL with required parameters
-    let paymentUrl = `${baseUrl}?merchantId=${config.merchantId}&orderId=${details.orderId}&amount=${formattedAmount}&currency=${details.currency}&hash=${hash}&merchantRedirect=${encodeURIComponent(details.redirectUrl)}&display=en&type=external`
-
-    // Add optional parameters
+    // Add optional parameters if provided
     if (details.description) {
-      paymentUrl += `&description=${encodeURIComponent(details.description.substring(0, 120))}`
+      paymentUrl.searchParams.append("description", details.description.substring(0, 120))
     }
 
-    if (details.customerReference) {
-      paymentUrl += `&customerReference=${encodeURIComponent(details.customerReference)}`
+    if (details.customerName) {
+      const customerData = {
+        name: details.customerName,
+        email: details.customerEmail,
+        phone: details.customerPhone || "",
+      }
+      paymentUrl.searchParams.append("customer", JSON.stringify(customerData))
     }
 
-    paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
-
-    // Log the payment URL for debugging
-    console.log("Generated Kashier payment URL:", paymentUrl)
-
-    return paymentUrl
+    return paymentUrl.toString()
   } catch (error) {
-    console.error("Error creating Kashier payment URL:", error)
+    console.error("Error creating Kashier payment session:", error)
     throw error
   }
 }
 
-// Verify a Kashier payment
-export async function verifyKashierPayment(paymentId: string): Promise<boolean> {
+export function getKashierScriptUrl(): string {
+  return kashierConfig.testMode ? "https://test.kashier.io/kashier.js" : "https://checkout.kashier.io/kashier.js"
+}
+
+export async function verifyPayment(paymentId: string): Promise<boolean> {
   // In a real implementation, you would call the Kashier API to verify a payment
   console.log("Verifying payment with Kashier:", paymentId)
+
+  // Return a mock result
   return true
-}
-
-export function prepareKashierData(details: PaymentDetails) {
-  try {
-    // Get Kashier credentials
-    const config = getKashierConfig()
-
-    // Format amount to ensure it has 2 decimal places
-    const formattedAmount = Number(details.amount).toFixed(2)
-
-    // Generate hash
-    const hash = generateKashierHash(
-      config.merchantId,
-      formattedAmount,
-      details.currency,
-      details.orderId,
-      config.apiKey,
-    )
-
-    return {
-      merchantId: config.merchantId,
-      amount: formattedAmount,
-      currency: details.currency,
-      orderId: details.orderId,
-      hash: hash,
-      customerReference: details.customerReference || details.orderId,
-      customerName: details.customerName,
-      customerEmail: details.customerEmail,
-      customerPhone: details.customerPhone || "",
-      description: details.description || "Coaching Session",
-      redirectUrl: details.redirectUrl,
-    }
-  } catch (error) {
-    console.error("Error preparing Kashier data:", error)
-    throw error
-  }
 }

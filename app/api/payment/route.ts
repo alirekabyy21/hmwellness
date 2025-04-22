@@ -1,13 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createKashierPaymentUrl } from "@/lib/kashier-service"
+import { createPaymentUrl, type PaymentDetails, generateNumericOrderId } from "@/lib/payment-service"
 
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
     const body = await request.json()
 
+    // Generate a numeric order ID if not provided
+    const orderId = body.orderId || generateNumericOrderId()
+
+    // Create customer reference
+    const customerReference = `REF-${body.customerName.substring(0, 3).toUpperCase()}-${orderId.substring(0, 5)}`
+
     // Validate required fields
-    const requiredFields = ["amount", "currency", "orderId", "customerName", "customerEmail"]
+    const requiredFields = ["amount", "currency", "customerName", "customerEmail", "redirectUrl"]
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -20,24 +26,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create payment URL using Kashier service
-    const paymentUrl = createKashierPaymentUrl({
-      amount: body.amount,
-      currency: body.currency,
-      orderId: body.orderId,
-      customerName: body.customerName,
-      customerEmail: body.customerEmail,
-      customerPhone: body.customerPhone,
-      description: body.description || "Coaching Session with Hagar Moharam",
-      redirectUrl: body.redirectUrl || `${request.nextUrl.origin}/book/confirmation?orderId=${body.orderId}`,
-      customerReference: body.customerReference || body.orderId,
-    })
+    // Create payment details with customer reference
+    const paymentDetails: PaymentDetails = {
+      ...body,
+      orderId,
+      customerReference,
+    }
 
-    // Return success response with payment URL
+    // Create payment URL
+    const paymentUrl = await createPaymentUrl(paymentDetails)
+
+    // Return success response
     return NextResponse.json({
       success: true,
       paymentUrl,
-      orderId: body.orderId,
+      orderId,
     })
   } catch (error) {
     console.error("Payment API error:", error)
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to create payment",
+        error: (error as Error).message || "Failed to create payment",
       },
       { status: 500 },
     )
