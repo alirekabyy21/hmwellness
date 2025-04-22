@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Add mode parameter for test environment
     if (process.env.NODE_ENV !== "production") {
-      paymentUrl.searchParams.append("mode", "test")
+      paymentUrl.searchParams.append("mode", "live")
     }
 
     // Add display language

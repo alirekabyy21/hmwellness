@@ -76,12 +76,12 @@ export default function DirectPaymentLinkPage() {
 
                     <div className="mb-6 p-4 bg-gray-100 rounded overflow-auto">
                       <pre className="text-xs whitespace-pre-wrap break-all">
-                        {`<a href="https://payments.kashier.io?merchantId=${merchantId}&orderId=${orderId}&amount=10&currency=EGP&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external">Pay Now</a>`}
+                        {`<a href="https://payments.kashier.io?merchantId=${merchantId}&orderId=${orderId}&amount=10&currency=EGP&hash=${hash}&mode=live&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external">Pay Now</a>`}
                       </pre>
                     </div>
 
                     <a
-                      href={`https://payments.kashier.io?merchantId=${merchantId}&orderId=${orderId}&amount=10&currency=EGP&hash=${hash}&mode=test&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`}
+                      href={`https://payments.kashier.io?merchantId=${merchantId}&orderId=${orderId}&amount=10&currency=EGP&hash=${hash}&mode=live&merchantRedirect=${encodeURIComponent(redirectUrl)}&display=en&type=external`}
                       className="inline-block bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
                     >
                       Pay Now (10 EGP)

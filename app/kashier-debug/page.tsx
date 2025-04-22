@@ -49,7 +49,7 @@ export default function KashierDebugPage() {
         url.searchParams.append("amount", amount)
         url.searchParams.append("currency", currency)
         url.searchParams.append("hash", generatedHash)
-        url.searchParams.append("mode", "test")
+        url.searchParams.append("mode", "live")
         url.searchParams.append("merchantRedirect", redirectUrl)
         url.searchParams.append("display", "en")
         url.searchParams.append("type", "external")
