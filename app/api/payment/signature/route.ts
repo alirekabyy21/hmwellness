@@ -21,12 +21,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing Kashier credentials" }, { status: 500 })
     }
 
-    // Format amount to ensure it has 2 decimal places
-    const formattedAmount = Number(amount).toFixed(2)
-
     // Generate signature using HMAC-SHA256
     // Format: merchantId + amount + currency + orderId
-    const signatureString = `${merchantId}${formattedAmount}${currency}${orderId}`
+    const signatureString = `${merchantId}${amount}${currency}${orderId}`
 
     // Use HMAC-SHA256 with the secret key
     const signature = crypto.createHmac("sha256", secretKey).update(signatureString).digest("hex")

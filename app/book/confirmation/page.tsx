@@ -173,7 +173,7 @@ END:VCALENDAR`
               Add to Calendar
             </Button>
             <Button variant="outline" className="w-full sm:w-auto flex items-center" asChild>
-              <a href={`mailto:contact@hagarmoharam.com?subject=Regarding%20Booking%20${bookingDetails.orderId}`}>
+              <a href={`mailto:contact@hmwellness.site?subject=Regarding%20Booking%20${bookingDetails.orderId}`}>
                 Contact Us
               </a>
             </Button>

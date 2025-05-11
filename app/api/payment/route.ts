@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate a unique order ID (numeric string for Kashier compatibility)
-    const orderId = Date.now().toString()
+    // Generate a unique order ID if not provided
+    const orderId = data.orderId || `ORDER-${Date.now()}`
 
     // Create a customer reference from name and timestamp
     const customerReference = `${data.customerName.replace(/\s+/g, "-")}-${Date.now()}`

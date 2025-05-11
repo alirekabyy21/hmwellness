@@ -1,4 +1,5 @@
 import { pricingConfig } from "@/app/config"
+import crypto from "crypto"
 
 export interface PaymentDetails {
   amount: number
@@ -16,47 +17,54 @@ export async function createPaymentSession(details: PaymentDetails) {
   try {
     console.log("Creating payment session with details:", JSON.stringify(details, null, 2))
 
-    // Construct the API URL with Kashier v2 checkout endpoint
-    const paymentGatewayUrl = `${process.env.NEXT_PUBLIC_PAYMENT_GATEWAY_URL || "https://checkout.kashier.io"}/api/v2/checkout`
+    // Get Kashier credentials
+    const merchantId = process.env.KASHIER_MERCHANT_ID
+    const secretKey = process.env.KASHIER_SECRET_KEY
 
-    // Make a POST request to the payment gateway API
-    const response = await fetch(paymentGatewayUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.KASHIER_API_KEY}`, // Use your API key from environment
-      },
-      body: JSON.stringify({
-        amount: details.amount,
-        currency: details.currency,
-        order_id: details.orderId, // Your unique order ID
-        customer_reference: details.customerReference, // Customer reference
-        redirect_url: details.successUrl, // Success URL after payment
-        fail_url: details.failureUrl, // Failure URL if payment fails
-        customer: {
-          name: details.customerName, // Customer's name
-          email: details.customerEmail, // Customer's email
-          phone: details.customerPhone, // Customer's phone
-        },
-      }),
-    })
-
-    // If the response is not OK, handle error
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error("Payment gateway error:", errorText)
-      throw new Error(`Payment gateway error: ${response.status} ${errorText}`)
+    if (!merchantId || !secretKey) {
+      console.error("Missing Kashier credentials")
+      return {
+        success: false,
+        error: "Missing Kashier credentials",
+      }
     }
 
-    // Parse the response JSON
-    const data = await response.json()
-    console.log("Payment session created:", JSON.stringify(data, null, 2))
+    // Format amount to ensure it has 2 decimal places
+    const formattedAmount = details.amount.toFixed(2)
 
-    // Return the payment URL and session ID
+    // Generate signature using HMAC-SHA256
+    // Format: merchantId + amount + currency + orderId
+    const signatureString = `${merchantId}${formattedAmount}${details.currency}${details.orderId}`
+
+    // Use HMAC-SHA256 with the secret key
+    const signature = crypto.createHmac("sha256", secretKey).update(signatureString).digest("hex")
+
+    // Create customer data
+    const customerData = {
+      name: details.customerName,
+      email: details.customerEmail,
+      phone: details.customerPhone || "",
+    }
+
+    // Construct the payment URL
+    const baseUrl = "https://checkout.kashier.io"
+    const testMode = process.env.NODE_ENV !== "production"
+
+    // Build the URL with required parameters
+    let paymentUrl = `${baseUrl}?merchantId=${merchantId}&orderId=${details.orderId}&amount=${formattedAmount}&currency=${details.currency}&signature=${signature}&mode=${testMode ? "test" : "live"}&redirectUrl=${encodeURIComponent(details.successUrl)}&failureUrl=${encodeURIComponent(details.failureUrl)}&display=en&type=external`
+
+    // Add customer reference
+    paymentUrl += `&customerReference=${encodeURIComponent(details.customerReference)}`
+
+    // Add customer data
+    paymentUrl += `&customer=${encodeURIComponent(JSON.stringify(customerData))}`
+
+    console.log("Payment URL:", paymentUrl)
+
     return {
       success: true,
-      paymentUrl: data.payment_url || data.redirect_url, // Redirect URL for payment
-      sessionId: data.payment_id || data.id, // Payment session ID
+      paymentUrl,
+      sessionId: details.orderId,
     }
   } catch (error) {
     console.error("Error creating payment session:", error)
@@ -67,7 +75,6 @@ export async function createPaymentSession(details: PaymentDetails) {
   }
 }
 
-// Price calculation function, including promo code support
 export function calculatePrice(
   isInternational: boolean,
   promoCode?: string,

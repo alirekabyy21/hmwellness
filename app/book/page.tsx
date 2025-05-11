@@ -12,17 +12,20 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Textarea } from "@/components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
-import { bookingConfig } from "@/app/config"
+import { bookingConfig, pricingConfig } from "@/app/config"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { isValidPhoneNumber } from "react-phone-number-input"
 import { CalendarIcon, Clock, User, Mail, Phone, MessageSquare, CreditCard, Loader2 } from "lucide-react"
+import { KashierPaymentButton } from "@/components/kashier-payment-button"
 
 export default function BookingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
+  const promoCode = searchParams.get("promo")
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -30,10 +33,51 @@ export default function BookingPage() {
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [timeSlot, setTimeSlot] = useState<string | undefined>(undefined)
   const [message, setMessage] = useState("")
-  const [isInternational, setIsInternational] = useState(false)
+  const [service, setService] = useState("Life Coaching Session")
+  const [location, setLocation] = useState("egypt")
+  const [promoCodeInput, setPromoCodeInput] = useState(promoCode || "")
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null)
+  const [discount, setDiscount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [availableSlots, setAvailableSlots] = useState<string[]>(bookingConfig.availableTimeSlots)
+  const [orderId, setOrderId] = useState(`ORDER-${Date.now()}`)
+
+  // Calculate price based on location and promo code
+  const calculatePrice = () => {
+    const basePrice = location === "international" ? pricingConfig.internationalPrice : pricingConfig.defaultPrice
+    let finalPrice = basePrice
+
+    if (appliedPromoCode && pricingConfig.promoCodes[appliedPromoCode]) {
+      const discountPercent = pricingConfig.promoCodes[appliedPromoCode]
+      const discountAmount = (basePrice * discountPercent) / 100
+      finalPrice = basePrice - discountAmount
+      setDiscount(discountPercent)
+    }
+
+    return {
+      basePrice,
+      finalPrice,
+      currency: location === "international" ? pricingConfig.internationalCurrency : pricingConfig.currency,
+    }
+  }
+
+  const { basePrice, finalPrice, currency } = calculatePrice()
+
+  // Apply promo code
+  const applyPromoCode = () => {
+    if (!promoCodeInput) {
+      setFormErrors({ ...formErrors, promoCode: "Please enter a promo code" })
+      return
+    }
+
+    if (pricingConfig.promoCodes[promoCodeInput]) {
+      setAppliedPromoCode(promoCodeInput)
+      setFormErrors({ ...formErrors, promoCode: "" })
+    } else {
+      setFormErrors({ ...formErrors, promoCode: "Invalid promo code" })
+    }
+  }
 
   // Fetch available time slots when date changes
   useEffect(() => {
@@ -61,6 +105,14 @@ export default function BookingPage() {
 
     fetchAvailableSlots()
   }, [date])
+
+  // Apply promo code from URL parameter
+  useEffect(() => {
+    if (promoCode && pricingConfig.promoCodes[promoCode]) {
+      setPromoCodeInput(promoCode)
+      setAppliedPromoCode(promoCode)
+    }
+  }, [promoCode])
 
   // Validate form fields
   const validateForm = () => {
@@ -105,48 +157,26 @@ export default function BookingPage() {
     setIsLoading(true)
 
     try {
-      // Create payment session
-      const paymentResponse = await fetch("/api/payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: isInternational ? 30 : 600,
-          currency: isInternational ? "USD" : "EGP",
-          customerName: name,
-          customerEmail: email,
-          customerPhone: phone,
-          service: "Life Coaching Session (60 minutes)",
-          date: format(date!, "yyyy-MM-dd"),
-          time: timeSlot,
-          message,
-        }),
-      })
-
-      const paymentData = await paymentResponse.json()
-
-      if (!paymentData.success) {
-        throw new Error(paymentData.error || "Failed to create payment session")
+      // Store booking details in session storage for confirmation page
+      const bookingDetails = {
+        name,
+        email,
+        phone,
+        service,
+        date: format(date!, "yyyy-MM-dd"),
+        time: timeSlot,
+        message,
+        orderId,
+        price: finalPrice,
+        currency,
+        discount: appliedPromoCode ? discount : 0,
       }
 
-      // Store booking details in session storage for confirmation page
-      sessionStorage.setItem(
-        "bookingDetails",
-        JSON.stringify({
-          name,
-          email,
-          phone,
-          service: "Life Coaching Session (60 minutes)",
-          date: format(date!, "yyyy-MM-dd"),
-          time: timeSlot,
-          message,
-          orderId: paymentData.orderId,
-        }),
-      )
+      sessionStorage.setItem("bookingDetails", JSON.stringify(bookingDetails))
 
-      // Redirect to payment page
-      window.location.href = paymentData.paymentUrl
+      // For direct Kashier integration, we'll use the KashierPaymentButton component
+      // The actual redirect happens in the component
+      setIsLoading(false)
     } catch (error) {
       console.error("Error processing booking:", error)
       setFormErrors({
@@ -157,39 +187,55 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="container mx-auto py-12 px-4 bg-gradient-to-b from-[#f8f9ff] to-[#f0f4ff]">
+    <div className="container mx-auto py-12 px-4">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-[#5d6bb0] mb-4">Book Your Coaching Session</h1>
-        <p className="text-xl text-[#6b7280] max-w-2xl mx-auto">
-          Schedule your 60-minute life coaching session with Hagar Moharam and take the first step towards positive
-          change.
+        <h1 className="text-4xl font-bold text-primary mb-4">Book Your Coaching Session</h1>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          Schedule your coaching session with Hagar Moharam and take the first step towards positive change.
         </p>
       </div>
 
       {error && (
-        <Alert className="mb-8 max-w-2xl mx-auto bg-red-50 border-red-200">
-          <AlertDescription className="text-red-800">
+        <Alert className="mb-8 max-w-2xl mx-auto">
+          <AlertDescription className="text-red-600">
             {error === "payment_failed" ? "Payment failed. Please try again." : error}
           </AlertDescription>
         </Alert>
       )}
 
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="p-6 bg-[#e8edff] border-b border-[#d1dbff]">
+        <div className="p-6 bg-primary/10 border-b">
           <div className="flex items-center">
-            <div className="bg-[#5d6bb0] p-3 rounded-full text-white mr-4">
+            <div className="bg-primary p-3 rounded-full text-white mr-4">
               <CalendarIcon className="h-6 w-6" />
             </div>
-            <h2 className="text-2xl font-semibold text-[#5d6bb0]">Life Coaching Session (60 minutes)</h2>
+            <h2 className="text-2xl font-semibold text-primary">Book Your Session</h2>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="space-y-4">
+            <Label className="text-primary font-medium">Select Service</Label>
+            <RadioGroup
+              defaultValue="Life Coaching Session"
+              onValueChange={setService}
+              className="grid grid-cols-1 gap-4"
+            >
+              <div className="flex items-center space-x-2 border p-4 rounded-md">
+                <RadioGroupItem value="Life Coaching Session" id="service-life" />
+                <Label htmlFor="service-life" className="flex-1 cursor-pointer">
+                  <div className="font-medium">Life Coaching Session</div>
+                  <div className="text-sm text-gray-500">60-minute personalized coaching session</div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="date" className="text-[#5d6bb0] font-medium flex items-center">
-                  <CalendarIcon className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                <Label htmlFor="date" className="text-primary font-medium flex items-center">
+                  <CalendarIcon className="h-4 w-4 mr-2 text-primary" />
                   Select Date
                 </Label>
                 <Popover>
@@ -197,16 +243,16 @@ export default function BookingPage() {
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal border-[#d1dbff] hover:bg-[#f0f4ff] hover:border-[#5d6bb0]",
+                        "w-full justify-start text-left font-normal",
                         !date && "text-muted-foreground",
                         formErrors.date && "border-red-500",
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4 text-[#5d6bb0]" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                       {date ? format(date, "EEEE, MMMM d, yyyy") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 border-[#d1dbff]">
+                  <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={date}
@@ -226,8 +272,8 @@ export default function BookingPage() {
 
               {date && (
                 <div className="space-y-2">
-                  <Label className="text-[#5d6bb0] font-medium flex items-center">
-                    <Clock className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                  <Label className="text-primary font-medium flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-primary" />
                     Select Time
                   </Label>
                   <div className="grid grid-cols-3 gap-2 mt-2">
@@ -237,12 +283,7 @@ export default function BookingPage() {
                           key={slot}
                           type="button"
                           variant={timeSlot === slot ? "default" : "outline"}
-                          className={cn(
-                            "text-sm",
-                            timeSlot === slot
-                              ? "bg-[#5d6bb0] hover:bg-[#4a5899] text-white"
-                              : "border-[#d1dbff] text-[#5d6bb0] hover:bg-[#f0f4ff] hover:border-[#5d6bb0]",
-                          )}
+                          className={cn("text-sm")}
                           onClick={() => setTimeSlot(slot)}
                         >
                           <Clock className="mr-2 h-4 w-4" />
@@ -250,7 +291,7 @@ export default function BookingPage() {
                         </Button>
                       ))
                     ) : (
-                      <div className="col-span-3 text-center py-4 text-[#6b7280] bg-[#f8f9ff] rounded-md border border-[#d1dbff]">
+                      <div className="col-span-3 text-center py-4 text-gray-500 bg-gray-50 rounded-md border">
                         No available slots for this date. Please select another date.
                       </div>
                     )}
@@ -262,26 +303,23 @@ export default function BookingPage() {
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-[#5d6bb0] font-medium flex items-center">
-                  <User className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                <Label htmlFor="name" className="text-primary font-medium flex items-center">
+                  <User className="h-4 w-4 mr-2 text-primary" />
                   Full Name
                 </Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className={cn(
-                    "border-[#d1dbff] focus:border-[#5d6bb0] focus:ring-[#5d6bb0]",
-                    formErrors.name ? "border-red-500" : "",
-                  )}
+                  className={cn(formErrors.name ? "border-red-500" : "")}
                   required
                 />
                 {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[#5d6bb0] font-medium flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                <Label htmlFor="email" className="text-primary font-medium flex items-center">
+                  <Mail className="h-4 w-4 mr-2 text-primary" />
                   Email Address
                 </Label>
                 <Input
@@ -289,21 +327,18 @@ export default function BookingPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={cn(
-                    "border-[#d1dbff] focus:border-[#5d6bb0] focus:ring-[#5d6bb0]",
-                    formErrors.email ? "border-red-500" : "",
-                  )}
+                  className={cn(formErrors.email ? "border-red-500" : "")}
                   required
                 />
                 {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-[#5d6bb0] font-medium flex items-center">
-                  <Phone className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                <Label htmlFor="phone" className="text-primary font-medium flex items-center">
+                  <Phone className="h-4 w-4 mr-2 text-primary" />
                   Phone Number
                 </Label>
-                <div className={cn("rounded-md border", formErrors.phone ? "border-red-500" : "border-[#d1dbff]")}>
+                <div className={cn("rounded-md border", formErrors.phone ? "border-red-500" : "")}>
                   <PhoneInput
                     international
                     defaultCountry="EG"
@@ -318,8 +353,8 @@ export default function BookingPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message" className="text-[#5d6bb0] font-medium flex items-center">
-              <MessageSquare className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+            <Label htmlFor="message" className="text-primary font-medium flex items-center">
+              <MessageSquare className="h-4 w-4 mr-2 text-primary" />
               Additional Information (Optional)
             </Label>
             <Textarea
@@ -327,51 +362,112 @@ export default function BookingPage() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Please share any specific topics or questions you'd like to address in our session."
-              className="min-h-[100px] border-[#d1dbff] focus:border-[#5d6bb0] focus:ring-[#5d6bb0]"
+              className="min-h-[100px]"
             />
           </div>
 
-          <div className="border-t border-[#d1dbff] pt-6">
-            <div className="flex items-center mb-4">
-              <input
-                id="international"
-                type="checkbox"
-                checked={isInternational}
-                onChange={(e) => setIsInternational(e.target.checked)}
-                className="h-4 w-4 rounded border-[#d1dbff] text-[#5d6bb0] focus:ring-[#5d6bb0]"
-              />
-              <label htmlFor="international" className="ml-2 block text-sm text-[#6b7280]">
-                International payment (USD)
-              </label>
+          <div className="border-t pt-6">
+            <div className="space-y-4">
+              <Label className="text-primary font-medium flex items-center">
+                <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                Payment Options
+              </Label>
+
+              <RadioGroup
+                defaultValue="egypt"
+                onValueChange={setLocation}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                <div className="flex items-center space-x-2 border p-4 rounded-md">
+                  <RadioGroupItem value="egypt" id="location-egypt" />
+                  <Label htmlFor="location-egypt" className="flex-1 cursor-pointer">
+                    <div className="font-medium">Egypt (EGP)</div>
+                    <div className="text-sm text-gray-500">Pay in Egyptian Pounds</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border p-4 rounded-md">
+                  <RadioGroupItem value="international" id="location-international" />
+                  <Label htmlFor="location-international" className="flex-1 cursor-pointer">
+                    <div className="font-medium">International (USD)</div>
+                    <div className="text-sm text-gray-500">Pay in US Dollars</div>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="p-4 bg-[#f8f9ff] rounded-md border border-[#d1dbff]">
-              <div className="flex justify-between items-center">
-                <span className="text-[#5d6bb0] font-medium flex items-center">
-                  <CreditCard className="h-4 w-4 mr-2 text-[#5d6bb0]" />
-                  Session Fee:
-                </span>
-                <span className="text-[#5d6bb0] font-bold text-lg">{isInternational ? "$30.00" : "EGP 600"}</span>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="promoCode" className="text-primary font-medium">
+                  Promo Code (Optional)
+                </Label>
+                <div className="flex space-x-2">
+                  <Input
+                    id="promoCode"
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                    placeholder="Enter promo code"
+                    className={cn(formErrors.promoCode ? "border-red-500" : "")}
+                  />
+                  <Button type="button" variant="outline" onClick={applyPromoCode}>
+                    Apply
+                  </Button>
+                </div>
+                {formErrors.promoCode && <p className="text-red-500 text-sm">{formErrors.promoCode}</p>}
+                {appliedPromoCode && <p className="text-green-600 text-sm">Promo code applied: {discount}% discount</p>}
+              </div>
+              <div className="p-4 bg-gray-50 rounded-md border">
+                <div className="flex justify-between items-center">
+                  <span className="text-primary font-medium">Session Fee:</span>
+                  <span className="text-primary font-bold text-lg">
+                    {currency} {finalPrice.toFixed(2)}
+                  </span>
+                </div>
+                {appliedPromoCode && (
+                  <div className="flex justify-between items-center text-sm text-gray-500 mt-1">
+                    <span>Original price:</span>
+                    <span className="line-through">
+                      {currency} {basePrice.toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {formErrors.submit && (
-            <Alert className="bg-red-50 border-red-200">
-              <AlertDescription className="text-red-800">{formErrors.submit}</AlertDescription>
+            <Alert>
+              <AlertDescription className="text-red-600">{formErrors.submit}</AlertDescription>
             </Alert>
           )}
 
-          <Button type="submit" className="w-full bg-[#5d6bb0] hover:bg-[#4a5899] text-white" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              `Proceed to Payment (${isInternational ? "$30.00" : "EGP 600"})`
-            )}
-          </Button>
+          {validateForm() && (
+            <KashierPaymentButton
+              amount={finalPrice}
+              currency={currency}
+              orderId={orderId}
+              description={`${service} - ${date ? format(date, "yyyy-MM-dd") : ""} ${timeSlot || ""}`}
+              customerName={name}
+              customerEmail={email}
+              customerPhone={phone}
+              redirectUrl={`${process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness.site"}/book/confirmation`}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                `Pay Now (${currency} ${finalPrice.toFixed(2)})`
+              )}
+            </KashierPaymentButton>
+          )}
+
+          {!validateForm() && (
+            <Button type="submit" className="w-full">
+              Continue to Payment
+            </Button>
+          )}
         </form>
       </div>
     </div>
