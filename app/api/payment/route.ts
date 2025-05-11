@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const customerReference = `${data.customerName.replace(/\s+/g, "-")}-${Date.now()}`
 
     // Create success and failure URLs with the order ID
-    const baseUrl = request.headers.get("origin") || process.env.NEXT_PUBLIC_BASE_URL || "https://hagarmoharam.com"
+    const baseUrl = request.headers.get("origin") || process.env.NEXT_PUBLIC_BASE_URL || "https://hmwellness.site"
     const successUrl = `${baseUrl}/book/confirmation?orderId=${orderId}`
     const failureUrl = `${baseUrl}/book?error=payment_failed&orderId=${orderId}`
 
