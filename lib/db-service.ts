@@ -16,6 +16,18 @@ export interface Booking {
   eventId?: string
 }
 
+export interface Payment {
+  id: string
+  bookingId: string
+  amount: number
+  currency: string
+  paymentMethod: string
+  status: "pending" | "paid" | "failed" | "refunded"
+  transactionId?: string
+  createdAt: string
+  updatedAt: string
+}
+
 // In-memory storage
 const bookings: Booking[] = [
   {
@@ -67,6 +79,41 @@ const bookings: Booking[] = [
   },
 ]
 
+const payments: Payment[] = [
+  {
+    id: "payment-1",
+    bookingId: "1",
+    amount: 600,
+    currency: "EGP",
+    paymentMethod: "card",
+    status: "paid",
+    transactionId: "txn-123",
+    createdAt: "2023-06-10T12:20:00Z",
+    updatedAt: "2023-06-10T12:30:00Z",
+  },
+  {
+    id: "payment-2",
+    bookingId: "2",
+    amount: 600,
+    currency: "EGP",
+    paymentMethod: "paypal",
+    status: "pending",
+    createdAt: "2023-06-12T09:00:00Z",
+    updatedAt: "2023-06-12T09:00:00Z",
+  },
+  {
+    id: "payment-3",
+    bookingId: "3",
+    amount: 600,
+    currency: "EGP",
+    paymentMethod: "vodafone-cash",
+    status: "refunded",
+    transactionId: "txn-456",
+    createdAt: "2023-06-14T15:00:00Z",
+    updatedAt: "2023-06-15T10:00:00Z",
+  },
+]
+
 // Bookings
 export async function getBookings() {
   return [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -114,6 +161,35 @@ export async function deleteBooking(id: string) {
 
   bookings.splice(index, 1)
   return true
+}
+
+// Payments
+export async function getPayments() {
+  return [...payments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+export async function getPaymentById(id: string) {
+  return payments.find((payment) => payment.id === id)
+}
+
+export async function getPaymentsByBookingId(bookingId: string) {
+  return payments.filter((payment) => payment.bookingId === bookingId)
+}
+
+export async function updatePayment(id: string, updates: Partial<Payment>) {
+  const index = payments.findIndex((payment) => payment.id === id)
+
+  if (index === -1) {
+    return null
+  }
+
+  payments[index] = {
+    ...payments[index],
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  }
+
+  return payments[index]
 }
 
 // Statistics

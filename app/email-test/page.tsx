@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { sendEmail, generateTestEmail } from "@/lib/email-service"
 import { siteConfig } from "@/app/config"
 
 export default function EmailTestPage() {
@@ -28,18 +27,19 @@ export default function EmailTestPage() {
     setMessage("Sending test email...")
 
     try {
-      const success = await sendEmail({
-        to: email,
-        subject: "Test Email from HM Wellness",
-        html: generateTestEmail(),
+      // Use the API route instead of direct Nodemailer calls
+      const response = await fetch(`/api/send-email?email=${encodeURIComponent(email)}`, {
+        method: "GET",
       })
 
-      if (success) {
+      const result = await response.json()
+
+      if (result.success) {
         setStatus("success")
         setMessage("Test email sent successfully! Please check your inbox.")
       } else {
         setStatus("error")
-        setMessage("Failed to send test email. Please check the console for more details.")
+        setMessage(`Failed to send test email: ${result.error || "Unknown error"}`)
       }
     } catch (error) {
       console.error("Error in test email:", error)
@@ -119,7 +119,18 @@ export default function EmailTestPage() {
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium">Email Template Preview</h3>
                     <div className="border rounded-md p-3 max-h-40 overflow-auto">
-                      <div dangerouslySetInnerHTML={{ __html: generateTestEmail() }} />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: `
+                          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                            <h2>Test Email</h2>
+                            <p>This is a test email to verify that the email functionality is working correctly.</p>
+                            <p>If you received this email, it means that your email configuration is set up correctly.</p>
+                            <p>Best regards,<br>HM Wellness</p>
+                          </div>
+                        `,
+                        }}
+                      />
                     </div>
                   </div>
                 </div>

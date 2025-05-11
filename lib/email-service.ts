@@ -1,3 +1,5 @@
+"use server"
+
 import nodemailer from "nodemailer"
 
 interface EmailOptions {
@@ -9,7 +11,13 @@ interface EmailOptions {
   attachments?: any[]
 }
 
-export async function sendEmail(options: EmailOptions) {
+interface EmailResult {
+  success: boolean
+  messageId?: string
+  error?: string
+}
+
+export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   try {
     // Create a transporter
     const transporter = nodemailer.createTransport({
@@ -43,6 +51,17 @@ export async function sendEmail(options: EmailOptions) {
     console.error("Error sending email:", error)
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
   }
+}
+
+export function generateTestEmail() {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Test Email</h2>
+      <p>This is a test email to verify that the email functionality is working correctly.</p>
+      <p>If you received this email, it means that your email configuration is set up correctly.</p>
+      <p>Best regards,<br>HM Wellness</p>
+    </div>
+  `
 }
 
 export function generateBookingConfirmationEmail(

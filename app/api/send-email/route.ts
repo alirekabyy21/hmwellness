@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sendEmail } from "@/lib/email-service"
+import { sendEmail, generateTestEmail } from "@/lib/email-service"
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,6 +37,32 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Email API error:", error)
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
+    )
+  }
+}
+
+// Add a special endpoint for test emails
+export async function GET(request: NextRequest) {
+  const searchParams = new URL(request.url).searchParams
+  const email = searchParams.get("email")
+
+  if (!email) {
+    return NextResponse.json({ success: false, error: "Email parameter is required" }, { status: 400 })
+  }
+
+  try {
+    const result = await sendEmail({
+      to: email,
+      subject: "Test Email from HM Wellness",
+      html: generateTestEmail(),
+    })
+
+    return NextResponse.json(result)
+  } catch (error) {
+    console.error("Test email error:", error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 },
