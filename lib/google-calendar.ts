@@ -1,136 +1,177 @@
+import { google } from "googleapis"
+import { bookingConfig } from "@/app/config"
+
+// Initialize the Google Calendar API client
+const calendar = google.calendar({
+  version: "v3",
+  auth: new google.auth.JWT({
+    email: process.env.GOOGLE_CLIENT_ID,
+    key: process.env.GOOGLE_CLIENT_SECRET,
+    scopes: ["https://www.googleapis.com/auth/calendar"],
+  }),
+})
+
 export interface CalendarEvent {
   summary: string
   description: string
-  startTime: Date
-  endTime: Date
-  attendees: string[]
-  meetingLink?: string
+  startTime: string // ISO string
+  endTime: string // ISO string
+  attendeeEmail: string
+  attendeeName: string
+  location?: string
 }
 
-export async function createCalendarEvent(event: CalendarEvent): Promise<{
-  eventId: string
-  meetingLink: string
-  calendarEventLink: string
-}> {
+export async function createCalendarEvent(eventDetails: CalendarEvent) {
   try {
-    const response = await fetch("/api/calendar", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    console.log("Creating calendar event:", JSON.stringify(eventDetails, null, 2))
+
+    const event = {
+      summary: eventDetails.summary,
+      description: eventDetails.description,
+      start: {
+        dateTime: eventDetails.startTime,
+        timeZone: bookingConfig.timeZone,
       },
-      body: JSON.stringify({
-        ...event,
-        startTime: event.startTime.toISOString(),
-        endTime: event.endTime.toISOString(),
-      }),
+      end: {
+        dateTime: eventDetails.endTime,
+        timeZone: bookingConfig.timeZone,
+      },
+      attendees: [{ email: eventDetails.attendeeEmail, displayName: eventDetails.attendeeName }],
+      location: eventDetails.location || "Online Session",
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "email", minutes: 24 * 60 }, // 1 day before
+          { method: "popup", minutes: 30 }, // 30 minutes before
+        ],
+      },
+      sendUpdates: "all", // Send emails to attendees
+    }
+
+    const response = await calendar.events.insert({
+      calendarId: "primary",
+      requestBody: event,
     })
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error("Calendar API error:", errorData)
-      throw new Error(errorData.error || "Failed to create calendar event")
-    }
-
-    const data = await response.json()
-
-    if (!data.success) {
-      throw new Error(data.error || "Failed to create calendar event")
-    }
+    console.log("Calendar event created:", response.data.htmlLink)
 
     return {
-      eventId: data.eventId,
-      meetingLink: data.meetingLink,
-      calendarEventLink: data.calendarEventLink,
+      success: true,
+      eventId: response.data.id,
+      eventLink: response.data.htmlLink,
     }
   } catch (error) {
     console.error("Error creating calendar event:", error)
-    // Fallback to a mock meeting link if the API call fails
-    const meetCode = Math.random().toString(36).substring(2, 11)
-    const meetingLink = `https://meet.google.com/${meetCode}`
-
-    // Generate a fallback Google Calendar link
-    const calendarEventLink = generateGoogleCalendarLink({
-      summary: event.summary,
-      description: event.description,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      location: meetingLink,
-    })
-
     return {
-      eventId: `event_${Math.random().toString(36).substring(2, 11)}`,
-      meetingLink,
-      calendarEventLink,
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown calendar error",
     }
   }
 }
 
-export async function getAvailableSlots(date: Date): Promise<string[]> {
-  // In a real implementation, this would check the Google Calendar for available slots
-  console.log("Getting available slots for date:", date)
+export async function getAvailableSlots(date: string) {
+  try {
+    // Get the start and end of the requested date
+    const startDate = new Date(date)
+    startDate.setHours(0, 0, 0, 0)
 
-  // Return mock data
-  return ["9:00 AM", "10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "4:00 PM"]
+    const endDate = new Date(date)
+    endDate.setHours(23, 59, 59, 999)
+
+    // Get events for the day
+    const response = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: startDate.toISOString(),
+      timeMax: endDate.toISOString(),
+      singleEvents: true,
+      orderBy: "startTime",
+    })
+
+    const events = response.data.items || []
+
+    // Get all booked time slots
+    const bookedSlots = events.map((event) => {
+      const start = new Date(event.start?.dateTime || "")
+      return start.getHours() + ":" + (start.getMinutes() < 10 ? "0" : "") + start.getMinutes()
+    })
+
+    // Filter available slots
+    const availableSlots = bookingConfig.availableTimeSlots.filter((slot) => !bookedSlots.includes(slot))
+
+    return {
+      success: true,
+      availableSlots,
+    }
+  } catch (error) {
+    console.error("Error getting available slots:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown calendar error",
+      availableSlots: bookingConfig.availableTimeSlots, // Fallback to all slots
+    }
+  }
 }
 
-// Helper function to generate a Google Calendar link
-export function generateGoogleCalendarLink({
-  summary,
-  description,
-  startTime,
-  endTime,
-  location,
-}: {
-  summary: string
-  description: string
-  startTime: Date
-  endTime: Date
-  location: string
-}): string {
-  const formatDate = (date: Date) => {
-    return date.toISOString().replace(/-|:|\.\d+/g, "")
+export async function deleteCalendarEvent(eventId: string) {
+  try {
+    await calendar.events.delete({
+      calendarId: "primary",
+      eventId,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting calendar event:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown calendar error",
+    }
   }
-
-  const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: summary,
-    details: description,
-    location: location,
-    dates: `${formatDate(startTime)}/${formatDate(endTime)}`,
-  })
-
-  return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
-// Generate an iCalendar (.ics) file content
-export function generateICalendarFile({
-  summary,
-  description,
-  startTime,
-  endTime,
-  location,
-}: {
-  summary: string
-  description: string
-  startTime: Date
-  endTime: Date
-  location: string
-}): string {
-  const formatDate = (date: Date) => {
-    return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"
-  }
+export async function updateCalendarEvent(eventId: string, eventDetails: Partial<CalendarEvent>) {
+  try {
+    const event: any = {}
 
-  return `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//HM Wellness//Coaching Session//EN
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-BEGIN:VEVENT
-SUMMARY:${summary}
-DESCRIPTION:${description.replace(/\n/g, "\\n")}
-LOCATION:${location}
-DTSTART:${formatDate(startTime)}
-DTEND:${formatDate(endTime)}
-END:VEVENT
-END:VCALENDAR`
+    if (eventDetails.summary) event.summary = eventDetails.summary
+    if (eventDetails.description) event.description = eventDetails.description
+    if (eventDetails.location) event.location = eventDetails.location
+
+    if (eventDetails.startTime) {
+      event.start = {
+        dateTime: eventDetails.startTime,
+        timeZone: bookingConfig.timeZone,
+      }
+    }
+
+    if (eventDetails.endTime) {
+      event.end = {
+        dateTime: eventDetails.endTime,
+        timeZone: bookingConfig.timeZone,
+      }
+    }
+
+    if (eventDetails.attendeeEmail) {
+      event.attendees = [{ email: eventDetails.attendeeEmail, displayName: eventDetails.attendeeName || "" }]
+    }
+
+    const response = await calendar.events.patch({
+      calendarId: "primary",
+      eventId,
+      requestBody: event,
+      sendUpdates: "all", // Send emails to attendees
+    })
+
+    return {
+      success: true,
+      eventId: response.data.id,
+      eventLink: response.data.htmlLink,
+    }
+  } catch (error) {
+    console.error("Error updating calendar event:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown calendar error",
+    }
+  }
 }

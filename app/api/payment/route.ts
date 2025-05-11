@@ -1,56 +1,55 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createPaymentUrl, type PaymentDetails, generateNumericOrderId } from "@/lib/payment-service"
+import { createPaymentSession } from "@/lib/payment-service"
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse the request body
-    const body = await request.json()
-
-    // Generate a numeric order ID if not provided
-    const orderId = body.orderId || generateNumericOrderId()
-
-    // Create customer reference
-    const customerReference = `REF-${body.customerName.substring(0, 3).toUpperCase()}-${orderId.substring(0, 5)}`
+    const data = await request.json()
 
     // Validate required fields
-    const requiredFields = ["amount", "currency", "customerName", "customerEmail", "redirectUrl"]
+    const requiredFields = ["amount", "currency", "customerName", "customerEmail", "customerPhone"]
     for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Missing required field: ${field}`,
-          },
-          { status: 400 },
-        )
+      if (!data[field]) {
+        return NextResponse.json({ success: false, error: `Missing required field: ${field}` }, { status: 400 })
       }
     }
 
-    // Create payment details with customer reference
-    const paymentDetails: PaymentDetails = {
-      ...body,
+    // Generate a unique order ID (numeric string for Kashier compatibility)
+    const orderId = Date.now().toString()
+
+    // Create a customer reference from name and timestamp
+    const customerReference = `${data.customerName.replace(/\s+/g, "-")}-${Date.now()}`
+
+    // Create success and failure URLs with the order ID
+    const baseUrl = request.headers.get("origin") || process.env.NEXT_PUBLIC_BASE_URL || "https://hagarmoharam.com"
+    const successUrl = `${baseUrl}/book/confirmation?orderId=${orderId}`
+    const failureUrl = `${baseUrl}/book?error=payment_failed&orderId=${orderId}`
+
+    const paymentResult = await createPaymentSession({
+      amount: data.amount,
+      currency: data.currency,
       orderId,
       customerReference,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      customerPhone: data.customerPhone,
+      successUrl,
+      failureUrl,
+    })
+
+    if (!paymentResult.success) {
+      return NextResponse.json({ success: false, error: paymentResult.error }, { status: 500 })
     }
 
-    // Create payment URL
-    const paymentUrl = await createPaymentUrl(paymentDetails)
-
-    // Return success response
     return NextResponse.json({
       success: true,
-      paymentUrl,
+      paymentUrl: paymentResult.paymentUrl,
       orderId,
+      sessionId: paymentResult.sessionId,
     })
   } catch (error) {
     console.error("Payment API error:", error)
-
-    // Return error response
     return NextResponse.json(
-      {
-        success: false,
-        error: (error as Error).message || "Failed to create payment",
-      },
+      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 },
     )
   }

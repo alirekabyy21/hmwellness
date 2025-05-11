@@ -1,29 +1,11 @@
 export const siteConfig = {
-  name: "HM Wellness", // Website name
-  coachName: "Hagar Moharam", // Coach name
-  tagline: "Transform Your Life with Professional Coaching", // Main tagline
-  description:
-    "Discover your true potential with Hagar Moharam, a certified life coach dedicated to helping you achieve your goals and live a more fulfilling life.",
-  email: "hagar@hmwellness.site", // Email
-  domain: "hmwellness.site", // Domain
-  phone: "+20 123 456 7890",
-  address: {
-    street: "123 Coaching Street",
-    city: "Cairo",
-    state: "",
-    zip: "",
-    country: "Egypt",
-  },
-  officeHours: [
-    { day: "Monday - Friday", hours: "9:00 AM - 5:00 PM" },
-    { day: "Saturday", hours: "10:00 AM - 2:00 PM" },
-    { day: "Sunday", hours: "Closed" },
-  ],
-  socialMedia: {
-    instagram: "https://instagram.com/hmwellness",
-    facebook: "https://facebook.com/hmwellness",
-    linkedin: "https://linkedin.com/in/hagarmoharam",
-    youtube: "",
+  name: "Hagar Moharam",
+  description: "Professional Life Coach",
+  url: "https://hagarmoharam.com",
+  ogImage: "https://hagarmoharam.com/og.jpg",
+  links: {
+    instagram: "https://instagram.com/hagarmoharam",
+    facebook: "https://facebook.com/hagarmoharam",
   },
 }
 
@@ -310,7 +292,7 @@ export const bookingContent = {
   // Session price
   sessionPrice: {
     egypt: "600 EGP",
-    egyptStudent: "400 EGP", // Added student price
+    egyptStudent: "400 EGP",
     international: "$30.00",
   },
 }
@@ -403,14 +385,12 @@ export const arabicContent = {
 
 // Pricing configuration for payment API
 export const pricingConfig = {
-  egypt: {
-    regular: 600,
-    student: 400,
-    currency: "EGP",
-  },
-  international: {
-    regular: 30,
-    currency: "USD",
+  currency: "EGP",
+  defaultPrice: 1500,
+  internationalPrice: 100, // USD
+  internationalCurrency: "USD",
+  promoCodes: {
+    test1234: 10, // 10% discount
   },
 }
 
@@ -426,5 +406,13 @@ export const promoCodes = {
 // Admin configuration
 export const adminConfig = {
   email: "alirekaby01@gmail.com",
-  passwordHash: "5f4dcc3b5aa765d61d8327deb882cf99", // This is just a placeholder, we'll use a secure auth method
+  password: "Hagarm@07", // In production, this should be stored securely
+  accessPath: "/admin",
+}
+
+export const bookingConfig = {
+  sessionDuration: 60, // minutes
+  availableTimeSlots: ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"],
+  daysInAdvance: 30, // How many days in advance can be booked
+  timeZone: "Africa/Cairo",
 }

@@ -1,75 +1,139 @@
 import { type NextRequest, NextResponse } from "next/server"
-
-export interface CalendarEvent {
-  summary: string
-  description: string
-  startTime: string
-  endTime: string
-  attendees: string[]
-}
+import { createCalendarEvent, getAvailableSlots, deleteCalendarEvent, updateCalendarEvent } from "@/lib/google-calendar"
+import { bookingConfig } from "@/app/config"
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { summary, description, startTime, endTime, attendees } = body as CalendarEvent
+    const data = await request.json()
 
-    // In a real implementation, this would call the Google Calendar API
-    // to create an event and generate a Google Meet link
-    console.log("Creating calendar event:", { summary, description, startTime, endTime, attendees })
+    // Validate required fields
+    const requiredFields = ["summary", "startTime", "attendeeEmail", "attendeeName"]
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        return NextResponse.json({ success: false, error: `Missing required field: ${field}` }, { status: 400 })
+      }
+    }
 
-    // For now, we'll return mock data with a properly formatted Google Meet link
-    const eventId = `event_${Math.random().toString(36).substring(2, 11)}`
+    // Calculate end time if not provided
+    if (!data.endTime) {
+      const startTime = new Date(data.startTime)
+      startTime.setMinutes(startTime.getMinutes() + bookingConfig.sessionDuration)
+      data.endTime = startTime.toISOString()
+    }
 
-    // Create a more realistic Google Meet link format
-    const meetCode = Math.random().toString(36).substring(2, 11)
-    const meetingLink = `https://meet.google.com/${meetCode}`
-
-    // Generate a Google Calendar event link that users can click to add to their calendar
-    const calendarEventLink = generateGoogleCalendarLink({
-      summary,
-      description,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
-      location: meetingLink,
+    const result = await createCalendarEvent({
+      summary: data.summary,
+      description: data.description || `Session with ${data.attendeeName}`,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      attendeeEmail: data.attendeeEmail,
+      attendeeName: data.attendeeName,
+      location: data.location,
     })
+
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
-      eventId,
-      meetingLink,
-      calendarEventLink,
+      eventId: result.eventId,
+      eventLink: result.eventLink,
     })
   } catch (error) {
-    console.error("Error creating calendar event:", error)
-    return NextResponse.json({ success: false, error: "Failed to create calendar event" }, { status: 500 })
+    console.error("Calendar API error:", error)
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
+    )
   }
 }
 
-// Helper function to generate a Google Calendar link
-function generateGoogleCalendarLink({
-  summary,
-  description,
-  startTime,
-  endTime,
-  location,
-}: {
-  summary: string
-  description: string
-  startTime: Date
-  endTime: Date
-  location: string
-}): string {
-  const formatDate = (date: Date) => {
-    return date.toISOString().replace(/-|:|\.\d+/g, "")
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const date = searchParams.get("date")
+
+    if (!date) {
+      return NextResponse.json({ success: false, error: "Date parameter is required" }, { status: 400 })
+    }
+
+    const result = await getAvailableSlots(date)
+
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      availableSlots: result.availableSlots,
+    })
+  } catch (error) {
+    console.error("Calendar API error:", error)
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
+    )
   }
+}
 
-  const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: summary,
-    details: description,
-    location: location,
-    dates: `${formatDate(startTime)}/${formatDate(endTime)}`,
-  })
+export async function DELETE(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const eventId = searchParams.get("eventId")
 
-  return `https://calendar.google.com/calendar/render?${params.toString()}`
+    if (!eventId) {
+      return NextResponse.json({ success: false, error: "Event ID is required" }, { status: 400 })
+    }
+
+    const result = await deleteCalendarEvent(eventId)
+
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Calendar API error:", error)
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
+    )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const data = await request.json()
+
+    if (!data.eventId) {
+      return NextResponse.json({ success: false, error: "Event ID is required" }, { status: 400 })
+    }
+
+    const result = await updateCalendarEvent(data.eventId, {
+      summary: data.summary,
+      description: data.description,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      attendeeEmail: data.attendeeEmail,
+      attendeeName: data.attendeeName,
+      location: data.location,
+    })
+
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      eventId: result.eventId,
+      eventLink: result.eventLink,
+    })
+  } catch (error) {
+    console.error("Calendar API error:", error)
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
+    )
+  }
 }

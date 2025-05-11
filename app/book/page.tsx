@@ -3,76 +3,105 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { addDays, format } from "date-fns"
-import { CalendarIcon, Check, ChevronLeft, ChevronRight, Clock, Globe } from "lucide-react"
-
+import { useRouter, useSearchParams } from "next/navigation"
+import { format, addDays } from "date-fns"
+import { CalendarIcon, Clock, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
-import { SiteHeader } from "@/components/layout/site-header"
-import { SiteFooter } from "@/components/layout/site-footer"
-import { PageHeader } from "@/components/layout/page-header"
-import { bookingContent } from "../config"
-import { createCalendarEvent } from "@/lib/google-calendar"
-import { sendEmail, generateConfirmationEmail } from "@/lib/email-service"
-import { detectUserLocationSimple } from "@/lib/location-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { SimpleConfirmation } from "./simple-confirmation"
-import { EmailFallback } from "./email-fallback"
-import { toast } from "@/components/ui/use-toast"
-import { pricingConfig, promoCodes } from "../config"
-import { generateNumericOrderId } from "@/lib/payment-service"
+import { cn } from "@/lib/utils"
+import { bookingContent } from "@/app/config"
+import PhoneInput from "react-phone-number-input"
+import "react-phone-number-input/style.css"
+import { isValidPhoneNumber } from "react-phone-number-input"
 
 export default function BookingPage() {
-  const [date, setDate] = useState<Date | undefined>(undefined)
-  const [timeSlot, setTimeSlot] = useState<string>("")
-  const [step, setStep] = useState(1)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-  })
-  const [promoCode, setPromoCode] = useState("")
-  const [promoCodeValid, setPromoCodeValid] = useState(false)
-  const [promoCodeType, setPromoCodeType] = useState<"student" | "test" | null>(null)
-  const [promoCodeError, setPromoCodeError] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isBooked, setIsBooked] = useState(false)
-  const [userLocation, setUserLocation] = useState<{ country: string; isEgypt: boolean }>({
-    country: "Unknown",
-    isEgypt: true,
-  })
-  const [availableSlots, setAvailableSlots] = useState<string[]>(bookingContent.timeSlots)
-  const [meetingLink, setMeetingLink] = useState("")
-  const [showPromoInfo, setShowPromoInfo] = useState(false)
-  const [showEmailFallback, setShowEmailFallback] = useState(false)
-  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const error = searchParams.get("error")
 
-  // Detect user's location
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [date, setDate] = useState<Date | undefined>(undefined)
+  const [timeSlot, setTimeSlot] = useState<string | undefined>(undefined)
+  const [service, setService] = useState("Life Coaching Session")
+  const [message, setMessage] = useState("")
+  const [isInternational, setIsInternational] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [step, setStep] = useState(1)
+  const [availableSlots, setAvailableSlots] = useState<string[]>(bookingContent.timeSlots)
+
+  // Fetch available time slots when date changes
   useEffect(() => {
-    const detectLocation = async () => {
-      const location = detectUserLocationSimple()
-      setUserLocation(location)
+    if (!date) {
+      setAvailableSlots([])
+      return
     }
 
-    detectLocation()
-  }, [])
+    const fetchAvailableSlots = async () => {
+      try {
+        const response = await fetch(`/api/calendar?date=${format(date, "yyyy-MM-dd")}`)
+        const data = await response.json()
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+        if (data.success) {
+          setAvailableSlots(data.availableSlots)
+        } else {
+          console.error("Error fetching available slots:", data.error)
+          setAvailableSlots(bookingContent.timeSlots)
+        }
+      } catch (error) {
+        console.error("Error fetching available slots:", error)
+        setAvailableSlots(bookingContent.timeSlots)
+      }
+    }
+
+    fetchAvailableSlots()
+  }, [date])
+
+  // Validate form fields
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+
+    if (!name.trim()) {
+      errors.name = "Name is required"
+    }
+
+    if (!email.trim()) {
+      errors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address"
+    }
+
+    if (!phone) {
+      errors.phone = "Phone number is required"
+    } else if (!isValidPhoneNumber(phone)) {
+      errors.phone = "Please enter a valid phone number"
+    }
+
+    if (step === 1 && !date) {
+      errors.date = "Please select a date"
+    }
+
+    if (step === 1 && !timeSlot) {
+      errors.time = "Please select a time slot"
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleNextStep = () => {
-    setStep(step + 1)
-    window.scrollTo(0, 0)
+    if (validateForm()) {
+      setStep(step + 1)
+      window.scrollTo(0, 0)
+    }
   }
 
   const handlePrevStep = () => {
@@ -80,620 +109,304 @@ export default function BookingPage() {
     window.scrollTo(0, 0)
   }
 
-  const validatePromoCode = () => {
-    setPromoCodeError("")
-    setPromoCodeValid(false)
-    setPromoCodeType(null)
-
-    // Check if the promo code is valid
-    if (promoCode.toLowerCase() === promoCodes.student.code) {
-      setPromoCodeValid(true)
-      setPromoCodeType("student")
-    } else if (promoCode.toLowerCase() === promoCodes.test.code) {
-      setPromoCodeValid(true)
-      setPromoCodeType("test")
-    } else {
-      if (promoCode) {
-        setPromoCodeError("Invalid promo code")
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (promoCode) {
-      validatePromoCode()
-    } else {
-      setPromoCodeValid(false)
-      setPromoCodeType(null)
-      setPromoCodeError("")
-    }
-  }, [promoCode])
-
-  const getPrice = () => {
-    if (!userLocation.isEgypt) {
-      return pricingConfig.international.regular + " " + pricingConfig.international.currency
-    }
-
-    // Apply promo code if valid
-    if (promoCodeValid) {
-      if (promoCodeType === "student") {
-        return pricingConfig.egypt.student + " " + pricingConfig.egypt.currency
-      } else if (promoCodeType === "test") {
-        return pricingConfig.egypt.test + " " + pricingConfig.egypt.currency
-      }
-    }
-
-    return pricingConfig.egypt.regular + " " + pricingConfig.egypt.currency
-  }
-
-  const getPriceValue = () => {
-    if (!userLocation.isEgypt) {
-      return pricingConfig.international.regular
-    }
-
-    // Apply promo code if valid
-    if (promoCodeValid) {
-      if (promoCodeType === "student") {
-        return pricingConfig.egypt.student
-      } else if (promoCodeType === "test") {
-        return pricingConfig.egypt.test
-      }
-    }
-
-    return pricingConfig.egypt.regular
-  }
-
-  const getCurrency = () => {
-    return userLocation.isEgypt ? pricingConfig.egypt.currency : pricingConfig.international.currency
-  }
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
-    setPaymentError(null)
+
+    if (!validateForm()) {
+      return
+    }
+
+    setIsLoading(true)
 
     try {
-      // Create a numeric order ID
-      const orderId = generateNumericOrderId()
+      // Create payment session
+      const paymentResponse = await fetch("/api/payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: isInternational ? 30 : 600,
+          currency: isInternational ? "USD" : "EGP",
+          customerName: name,
+          customerEmail: email,
+          customerPhone: phone,
+          service,
+          date: format(date!, "yyyy-MM-dd"),
+          time: timeSlot,
+          message,
+        }),
+      })
 
-      // Create calendar event
-      if (date && timeSlot) {
-        const [hours, minutes] = timeSlot
-          .match(/(\d+):(\d+)/)
-          ?.slice(1)
-          .map(Number) || [0, 0]
-        const isPM = timeSlot.includes("PM") && hours < 12
-        const startTime = new Date(date)
-        startTime.setHours(isPM ? hours + 12 : hours, minutes, 0)
+      const paymentData = await paymentResponse.json()
 
-        const endTime = new Date(startTime)
-        endTime.setHours(endTime.getHours() + 1)
-
-        const calendarEvent = await createCalendarEvent({
-          summary: `Coaching Session with ${formData.name}`,
-          description: `Service: 60-Minute Coaching Session\nClient: ${formData.name}\nPhone: ${formData.phone}\nNotes: ${formData.message}`,
-          startTime,
-          endTime,
-          attendees: [formData.email, "hagarmoharam7@gmail.com"], // Add the coach's email
-        })
-
-        setMeetingLink(calendarEvent.meetingLink)
-
-        // Create customer reference
-        const customerReference = `REF-${formData.name.substring(0, 3).toUpperCase()}-${orderId.substring(0, 5)}`
-
-        // Store booking details in session storage
-        const bookingDetails = {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          message: formData.message,
-          date: date.toISOString(),
-          timeSlot,
-          meetingLink: calendarEvent.meetingLink,
-          calendarEventLink: calendarEvent.calendarEventLink,
-          orderId,
-          customerReference,
-          promoCodeApplied: promoCodeValid
-            ? promoCodeType === "student"
-              ? promoCodes.student.description
-              : promoCodes.test.description
-            : null,
-        }
-
-        sessionStorage.setItem("bookingDetails", JSON.stringify(bookingDetails))
-
-        // Try to send email
-        const emailSuccess = await sendEmail({
-          to: formData.email,
-          subject: "Your Coaching Session is Confirmed - HM Wellness",
-          html: generateConfirmationEmail(
-            formData.name,
-            "60-Minute Coaching Session",
-            format(date, "EEEE, MMMM d, yyyy"),
-            timeSlot,
-            calendarEvent.meetingLink,
-            "",
-            calendarEvent.calendarEventLink,
-          ),
-        })
-
-        console.log("Email sending result:", emailSuccess)
-
-        // Create payment using the API
-        const redirectUrl = `${window.location.origin}/book/confirmation?orderId=${orderId}`
-
-        console.log("Creating payment with:", {
-          orderId,
-          customerName: formData.name,
-          customerEmail: formData.email,
-          customerReference,
-          amount: getPriceValue(),
-          currency: getCurrency(),
-          redirectUrl,
-        })
-
-        const paymentResponse = await fetch("/api/payment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orderId,
-            customerName: formData.name,
-            customerEmail: formData.email,
-            customerReference,
-            amount: getPriceValue(),
-            currency: getCurrency(),
-            redirectUrl,
-          }),
-        })
-
-        if (!paymentResponse.ok) {
-          const errorData = await paymentResponse.json()
-          console.error("Payment API error:", errorData)
-          throw new Error(`Payment API error: ${errorData.error || "Unknown error"}`)
-        }
-
-        const paymentData = await paymentResponse.json()
-        console.log("Payment API response:", paymentData)
-
-        if (paymentData.success && paymentData.paymentUrl) {
-          // Redirect to payment page
-          window.location.href = paymentData.paymentUrl
-        } else {
-          throw new Error("Invalid payment response: " + JSON.stringify(paymentData))
-        }
+      if (!paymentData.success) {
+        throw new Error(paymentData.error || "Failed to create payment session")
       }
+
+      // Store booking details in session storage for confirmation page
+      sessionStorage.setItem(
+        "bookingDetails",
+        JSON.stringify({
+          name,
+          email,
+          phone,
+          service,
+          date: format(date!, "yyyy-MM-dd"),
+          time: timeSlot,
+          message,
+          orderId: paymentData.orderId,
+        }),
+      )
+
+      // Redirect to payment page
+      window.location.href = paymentData.paymentUrl
     } catch (error) {
-      console.error("Error booking appointment:", error)
-
-      // Set payment error message
-      setPaymentError((error as Error).message || "Failed to process payment. Please try again.")
-
-      // Only show email fallback if there's a payment error but the booking was created
-      if (meetingLink) {
-        setShowEmailFallback(true)
-      } else {
-        toast({
-          title: "Booking Error",
-          description: "There was an error processing your booking. Please try again or contact support.",
-          variant: "destructive",
-        })
-      }
-
-      setIsSubmitting(false)
+      console.error("Error processing booking:", error)
+      setFormErrors({
+        submit: error instanceof Error ? error.message : "An unexpected error occurred",
+      })
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SiteHeader />
-      <main className="flex-1">
-        <PageHeader
-          title={bookingContent.hero.title}
-          description={bookingContent.hero.description}
-          className="bg-gradient-to-r from-bg-light to-bg-medium"
-        />
+    <div className="container mx-auto py-12 px-4">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-primary mb-4">{bookingContent.hero.title}</h1>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">{bookingContent.hero.description}</p>
+      </div>
 
-        <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            {isBooked ? (
-              <SimpleConfirmation
-                name={formData.name}
-                email={formData.email}
-                date={date ? format(date, "EEEE, MMMM d, yyyy") : ""}
-                timeSlot={timeSlot}
-                onClose={() => setIsBooked(false)}
-              />
-            ) : (
-              <Card className="mx-auto max-w-2xl border-primary/20 shadow-md">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-primary">Book a 60-Minute Session</CardTitle>
-                      <CardDescription>Select a date and time that works for you</CardDescription>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div
-                        className={cn(
-                          "flex h-6 w-6 items-center justify-center rounded-full",
-                          step >= 1
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-muted-foreground text-muted-foreground",
-                        )}
-                      >
-                        1
-                      </div>
-                      <div className={cn("h-px w-6", step >= 2 ? "bg-primary" : "bg-muted-foreground")} />
-                      <div
-                        className={cn(
-                          "flex h-6 w-6 items-center justify-center rounded-full",
-                          step >= 2
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-muted-foreground text-muted-foreground",
-                        )}
-                      >
-                        2
-                      </div>
-                      <div className={cn("h-px w-6", step >= 3 ? "bg-primary" : "bg-muted-foreground")} />
-                      <div
-                        className={cn(
-                          "flex h-6 w-6 items-center justify-center rounded-full",
-                          step >= 3
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-muted-foreground text-muted-foreground",
-                        )}
-                      >
-                        3
-                      </div>
-                    </div>
+      {error && (
+        <Alert className="mb-8 max-w-2xl mx-auto bg-red-50 border-red-200">
+          <AlertDescription className="text-red-800">
+            {error === "payment_failed" ? "Payment failed. Please try again." : error}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="p-6 bg-primary/5 border-b">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-primary">Book Your Session</h2>
+            <div className="flex items-center space-x-2">
+              <div
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-full",
+                  step >= 1 ? "bg-primary text-white" : "border border-gray-300 text-gray-400",
+                )}
+              >
+                1
+              </div>
+              <div className={cn("h-px w-6", step >= 2 ? "bg-primary" : "bg-gray-300")} />
+              <div
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-full",
+                  step >= 2 ? "bg-primary text-white" : "border border-gray-300 text-gray-400",
+                )}
+              >
+                2
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {step === 1 ? (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="service">Service Type</Label>
+                <RadioGroup value={service} onValueChange={setService} className="flex flex-col space-y-2 mt-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Life Coaching Session" id="coaching" />
+                    <Label htmlFor="coaching">Life Coaching Session (60 minutes)</Label>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {paymentError && (
-                    <Alert className="mb-4 bg-red-50 border-red-200 text-red-800">
-                      <AlertDescription>
-                        <p>{paymentError}</p>
-                        <p className="text-sm mt-1">Please try again or contact support for assistance.</p>
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Career Coaching" id="career" />
+                    <Label htmlFor="career">Career Coaching (60 minutes)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Consultation" id="consultation" />
+                    <Label htmlFor="consultation">Initial Consultation (30 minutes)</Label>
+                  </div>
+                </RadioGroup>
+              </div>
 
-                  <form onSubmit={handleSubmit}>
-                    {step === 1 && (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label className="text-base">Select a date</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  !date && "text-muted-foreground",
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "PPP") : "Select a date"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={date}
-                                onSelect={setDate}
-                                initialFocus
-                                disabled={(date) => date < new Date() || date > addDays(new Date(), 30)}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        {date && (
-                          <div className="space-y-2">
-                            <Label className="text-base">Select a time slot (60 minutes)</Label>
-                            <RadioGroup
-                              value={timeSlot}
-                              onValueChange={setTimeSlot}
-                              className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
-                            >
-                              {availableSlots.map((slot) => (
-                                <div key={slot}>
-                                  <RadioGroupItem value={slot} id={slot} className="peer sr-only" />
-                                  <Label
-                                    htmlFor={slot}
-                                    className="flex cursor-pointer items-center justify-center rounded-md border border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 [&:has([data-state=checked])]:border-primary"
-                                  >
-                                    <Clock className="mr-2 h-4 w-4 text-primary" />
-                                    {slot}
-                                  </Label>
-                                </div>
-                              ))}
-                            </RadioGroup>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {step === 2 && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="name" className="text-base">
-                              Full Name
-                            </Label>
-                            <Input
-                              id="name"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleInputChange}
-                              placeholder="John Doe"
-                              required
-                              className="border-primary/20 focus-visible:ring-primary"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="email" className="text-base">
-                              Email
-                            </Label>
-                            <Input
-                              id="email"
-                              name="email"
-                              type="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                              placeholder="john@example.com"
-                              required
-                              className="border-primary/20 focus-visible:ring-primary"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone" className="text-base">
-                            Phone Number
-                          </Label>
-                          <Input
-                            id="phone"
-                            name="phone"
-                            type="tel"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            placeholder="+20 123 456 7890"
-                            required
-                            className="border-primary/20 focus-visible:ring-primary"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="message" className="text-base">
-                            What would you like to focus on in our session?
-                          </Label>
-                          <Textarea
-                            id="message"
-                            name="message"
-                            value={formData.message}
-                            onChange={handleInputChange}
-                            placeholder="Please share any specific goals or challenges you'd like to address..."
-                            rows={4}
-                            className="border-primary/20 focus-visible:ring-primary"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {step === 3 && (
-                      <div className="space-y-6">
-                        <div className="rounded-lg border p-4 bg-bg-light">
-                          <h3 className="font-medium text-primary">Booking Summary</h3>
-                          <div className="mt-3 space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Service:</span>
-                              <span>60-Minute Coaching Session</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Date:</span>
-                              <span>{date ? format(date, "PPP") : "Not selected"}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Time:</span>
-                              <span>{timeSlot || "Not selected"}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Name:</span>
-                              <span>{formData.name}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Email:</span>
-                              <span>{formData.email}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Phone:</span>
-                              <span>{formData.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="rounded-lg border p-4 bg-bg-light">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-primary">Promo Code</h3>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowPromoInfo(!showPromoInfo)}
-                              className="text-primary hover:text-primary/80 hover:bg-primary/10 -mr-2"
-                            >
-                              {showPromoInfo ? "Hide Info" : "Student Discount?"}
-                            </Button>
-                          </div>
-
-                          {showPromoInfo && (
-                            <Alert className="mt-2 bg-primary/5 border-primary/20">
-                              <AlertDescription>
-                                <p className="text-sm">
-                                  <strong>Student Discount:</strong> Send a WhatsApp message to{" "}
-                                  <a
-                                    href="https://wa.me/201090250475"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary font-medium"
-                                  >
-                                    01090250475
-                                  </a>{" "}
-                                  with your valid student ID to receive the student promo code.
-                                </p>
-                              </AlertDescription>
-                            </Alert>
-                          )}
-
-                          <div className="mt-3 flex gap-2">
-                            <div className="flex-1">
-                              <Input
-                                placeholder="Enter promo code"
-                                value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value)}
-                                className="border-primary/20 focus-visible:ring-primary"
-                              />
-                              {promoCodeError && <p className="text-red-500 text-xs mt-1">{promoCodeError}</p>}
-                              {promoCodeValid && promoCodeType === "student" && (
-                                <p className="text-green-600 text-xs mt-1">Student discount applied!</p>
-                              )}
-                              {promoCodeValid && promoCodeType === "test" && (
-                                <p className="text-green-600 text-xs mt-1">Test payment code applied (5 EGP)!</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="rounded-lg border p-4 bg-bg-light">
-                          <h3 className="font-medium text-primary">Payment</h3>
-                          <div className="flex items-center mt-2">
-                            <div className="flex items-center gap-2">
-                              {userLocation.isEgypt ? (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                    Egypt
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <Globe className="h-4 w-4 text-primary" />
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                    International
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            You will be redirected to our secure payment page after confirming your booking.
-                          </p>
-                          <div className="mt-3 space-y-2">
-                            <div className="flex justify-between font-medium">
-                              <span>Total:</span>
-                              <div>
-                                {promoCodeValid && userLocation.isEgypt && promoCodeType === "student" && (
-                                  <div className="flex flex-col items-end">
-                                    <span className="text-sm line-through text-muted-foreground">600 EGP</span>
-                                    <span className="text-primary">400 EGP</span>
-                                  </div>
-                                )}
-                                {promoCodeValid && userLocation.isEgypt && promoCodeType === "test" && (
-                                  <div className="flex flex-col items-end">
-                                    <span className="text-sm line-through text-muted-foreground">600 EGP</span>
-                                    <span className="text-primary">5 EGP</span>
-                                  </div>
-                                )}
-                                {(!promoCodeValid || !userLocation.isEgypt) && (
-                                  <span className="text-primary">{getPrice()}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </form>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  {step > 1 ? (
+              <div className="space-y-2">
+                <Label>Select Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      onClick={handlePrevStep}
-                      className="border-primary/20 text-primary hover:bg-primary/10"
-                    >
-                      <ChevronLeft className="mr-2 h-4 w-4" />
-                      Back
-                    </Button>
-                  ) : (
-                    <div></div>
-                  )}
-                  {step < 3 ? (
-                    <Button
-                      onClick={handleNextStep}
-                      disabled={
-                        (step === 1 && (!date || !timeSlot)) ||
-                        (step === 2 && (!formData.name || !formData.email || !formData.phone))
-                      }
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      Next
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          Confirm Booking
-                          <Check className="ml-2 h-4 w-4" />
-                        </>
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground",
+                        formErrors.date && "border-red-500",
                       )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : <span>Pick a date</span>}
                     </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      disabled={(date) => {
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        return date < today || date > addDays(today, 30)
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {formErrors.date && <p className="text-red-500 text-sm">{formErrors.date}</p>}
+              </div>
+
+              {date && (
+                <div className="space-y-2">
+                  <Label>Select Time</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {availableSlots.length > 0 ? (
+                      availableSlots.map((slot) => (
+                        <Button
+                          key={slot}
+                          type="button"
+                          variant={timeSlot === slot ? "default" : "outline"}
+                          className="text-sm"
+                          onClick={() => setTimeSlot(slot)}
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          {slot}
+                        </Button>
+                      ))
+                    ) : (
+                      <div className="col-span-3 text-center py-4 text-gray-500">
+                        No available slots for this date. Please select another date.
+                      </div>
+                    )}
+                  </div>
+                  {formErrors.time && <p className="text-red-500 text-sm">{formErrors.time}</p>}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={formErrors.name ? "border-red-500" : ""}
+                  required
+                />
+                {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={formErrors.email ? "border-red-500" : ""}
+                  required
+                />
+                {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <div className={`rounded-md border ${formErrors.phone ? "border-red-500" : "border-input"}`}>
+                  <PhoneInput
+                    international
+                    defaultCountry="EG"
+                    value={phone}
+                    onChange={(value) => setPhone(value || "")}
+                    className="flex h-10 w-full rounded-md border-0 bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+                {formErrors.phone && <p className="text-red-500 text-sm">{formErrors.phone}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="message">Additional Information (Optional)</Label>
+                <Textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Please share any specific topics or questions you'd like to address in our session."
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-center mb-4">
+                  <input
+                    id="international"
+                    type="checkbox"
+                    checked={isInternational}
+                    onChange={(e) => setIsInternational(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="international" className="ml-2 block text-sm text-gray-700">
+                    International payment (USD)
+                  </label>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-md">
+                  <div className="flex justify-between font-medium">
+                    <span>Session Fee:</span>
+                    <span className="text-primary">
+                      {isInternational
+                        ? `$${bookingContent.sessionPrice.international}`
+                        : `${bookingContent.sessionPrice.egypt}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {formErrors.submit && (
+                <Alert className="bg-red-50 border-red-200">
+                  <AlertDescription className="text-red-800">{formErrors.submit}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-between pt-4 border-t border-gray-200">
+            {step === 2 ? (
+              <>
+                <Button type="button" variant="outline" onClick={handlePrevStep}>
+                  Back
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Confirm & Pay"
                   )}
-                </CardFooter>
-              </Card>
+                </Button>
+              </>
+            ) : (
+              <>
+                <div></div>
+                <Button type="button" onClick={handleNextStep} disabled={!date || !timeSlot}>
+                  Continue
+                </Button>
+              </>
             )}
           </div>
-        </section>
-        {showEmailFallback && (
-          <EmailFallback
-            name={formData.name}
-            email={formData.email}
-            date={date ? format(date, "EEEE, MMMM d, yyyy") : ""}
-            timeSlot={timeSlot}
-            open={showEmailFallback}
-            onClose={() => setShowEmailFallback(false)}
-          />
-        )}
-      </main>
-      <SiteFooter />
+        </form>
+      </div>
     </div>
   )
 }

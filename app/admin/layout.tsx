@@ -3,27 +3,19 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { LayoutDashboard, Calendar, Users, CreditCard, Settings, LogOut } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
+import { getSession } from "@/lib/auth-service"
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard | HM Wellness",
-  description: "Admin dashboard for HM Wellness",
+  title: "Admin Dashboard | Hagar Moharam",
+  description: "Admin dashboard for managing bookings, clients, and payments",
 }
 
-// This is a simple auth check - in a real app, you would use a proper auth solution
-const isAuthenticated = () => {
-  // Replace with actual auth logic
-  return true
-}
-
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Check if user is authenticated
-  if (!isAuthenticated()) {
+  const session = await getSession()
+
+  if (!session) {
     redirect("/admin/login")
   }
 
@@ -36,7 +28,7 @@ export default function AdminLayout({
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold">
               HM
             </div>
-            <span className="font-semibold text-primary">HM Wellness Admin</span>
+            <span className="font-semibold text-primary">Admin Dashboard</span>
           </div>
 
           <nav className="space-y-1 mt-8 flex-1">
@@ -48,11 +40,11 @@ export default function AdminLayout({
               <span>Dashboard</span>
             </Link>
             <Link
-              href="/admin/appointments"
+              href="/admin/bookings"
               className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-primary/20 text-primary"
             >
               <Calendar size={18} />
-              <span>Appointments</span>
+              <span>Bookings</span>
             </Link>
             <Link
               href="/admin/clients"
@@ -69,20 +61,33 @@ export default function AdminLayout({
               <span>Payments</span>
             </Link>
             <Link
-              href="/admin/website"
+              href="/admin/settings"
               className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-primary/20 text-primary"
             >
               <Settings size={18} />
-              <span>Website Settings</span>
+              <span>Settings</span>
             </Link>
           </nav>
 
-          <div className="mt-auto pt-4 border-t">
-            <Button variant="ghost" className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-100">
+          <form
+            action={async () => {
+              "use server"
+              await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/logout`, {
+                method: "POST",
+              })
+              redirect("/admin/login")
+            }}
+            className="mt-auto pt-4 border-t"
+          >
+            <Button
+              type="submit"
+              variant="ghost"
+              className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-100"
+            >
               <LogOut size={18} className="mr-2" />
               <span>Logout</span>
             </Button>
-          </div>
+          </form>
         </div>
       </aside>
 

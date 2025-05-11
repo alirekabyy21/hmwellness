@@ -1,374 +1,268 @@
 "use client"
 
-import { useState } from "react"
-import { CalendarIcon, ChevronLeft, ChevronRight, MoreHorizontal, Plus, Search } from "lucide-react"
-import { format, addDays } from "date-fns"
-
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Calendar, Clock, Edit, Eye, Filter, MoreHorizontal, Plus, RefreshCw, Search, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import type { Booking } from "@/lib/db-service"
 
 export default function BookingsPage() {
-  const [date, setDate] = useState<Date | undefined>(new Date())
-  const [isAddingSlot, setIsAddingSlot] = useState(false)
-  const [isEditingBooking, setIsEditingBooking] = useState(false)
-  const [selectedBooking, setSelectedBooking] = useState<any>(null)
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
 
-  // Mock data for bookings
-  const bookings = [
-    {
-      id: 1,
-      clientName: "Sarah Johnson",
-      email: "sarah@example.com",
-      service: "Career Coaching",
-      date: new Date(),
-      time: "10:00 AM",
-      duration: "60 minutes",
-      status: "confirmed",
-    },
-    {
-      id: 2,
-      clientName: "Ahmed Hassan",
-      email: "ahmed@example.com",
-      service: "Life Transition Coaching",
-      date: new Date(),
-      time: "2:00 PM",
-      duration: "60 minutes",
-      status: "confirmed",
-    },
-    {
-      id: 3,
-      clientName: "Mona Ali",
-      email: "mona@example.com",
-      service: "Personal Development",
-      date: addDays(new Date(), 1),
-      time: "11:00 AM",
-      duration: "60 minutes",
-      status: "pending",
-    },
-  ]
+  useEffect(() => {
+    fetchBookings()
+  }, [])
 
-  // Filter bookings for the selected date
-  const filteredBookings = bookings.filter((booking) => date && booking.date.toDateString() === date.toDateString())
+  const fetchBookings = async () => {
+    setIsLoading(true)
+    setError(null)
 
-  const handleEditBooking = (booking: any) => {
-    setSelectedBooking(booking)
-    setIsEditingBooking(true)
+    try {
+      const response = await fetch("/api/admin/bookings")
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch bookings")
+      }
+
+      setBookings(data.bookings)
+    } catch (error) {
+      console.error("Error fetching bookings:", error)
+      setError(error instanceof Error ? error.message : "An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleCancelBooking = (bookingId: number) => {
-    // In a real app, you would call an API to cancel the booking
-    alert(`Booking ${bookingId} cancelled`)
+  const handleDeleteBooking = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this booking?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/bookings?id=${id}`, {
+        method: "DELETE",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete booking")
+      }
+
+      // Remove the deleted booking from the state
+      setBookings((prevBookings) => prevBookings.filter((booking) => booking.id !== id))
+    } catch (error) {
+      console.error("Error deleting booking:", error)
+      alert(error instanceof Error ? error.message : "Failed to delete booking")
+    }
   }
 
-  const handleSaveBooking = () => {
-    // In a real app, you would call an API to update the booking
-    setIsEditingBooking(false)
-    setSelectedBooking(null)
+  const filteredBookings = bookings.filter((booking) => {
+    // Apply status filter
+    if (filter !== "all" && booking.status !== filter) {
+      return false
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      return (
+        booking.name.toLowerCase().includes(query) ||
+        booking.email.toLowerCase().includes(query) ||
+        booking.phone.toLowerCase().includes(query) ||
+        booking.service.toLowerCase().includes(query)
+      )
+    }
+
+    return true
+  })
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return <Badge className="bg-green-500">Confirmed</Badge>
+      case "pending":
+        return <Badge className="bg-yellow-500">Pending</Badge>
+      case "cancelled":
+        return <Badge className="bg-red-500">Cancelled</Badge>
+      case "completed":
+        return <Badge className="bg-blue-500">Completed</Badge>
+      default:
+        return <Badge>{status}</Badge>
+    }
+  }
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case "paid":
+        return <Badge className="bg-green-500">Paid</Badge>
+      case "pending":
+        return <Badge className="bg-yellow-500">Pending</Badge>
+      case "failed":
+        return <Badge className="bg-red-500">Failed</Badge>
+      case "refunded":
+        return <Badge className="bg-blue-500">Refunded</Badge>
+      default:
+        return <Badge>{status}</Badge>
+    }
   }
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary">Bookings</h1>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search bookings..." className="w-[250px] pl-8" />
-          </div>
-          <Dialog open={isAddingSlot} onOpenChange={setIsAddingSlot}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Availability
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Availability</DialogTitle>
-                <DialogDescription>Add new time slots when you're available for bookings.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : "Select a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="start-time">Start Time</Label>
-                    <Select>
-                      <SelectTrigger id="start-time">
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[
-                          "9:00 AM",
-                          "10:00 AM",
-                          "11:00 AM",
-                          "12:00 PM",
-                          "1:00 PM",
-                          "2:00 PM",
-                          "3:00 PM",
-                          "4:00 PM",
-                          "5:00 PM",
-                        ].map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="end-time">End Time</Label>
-                    <Select>
-                      <SelectTrigger id="end-time">
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[
-                          "10:00 AM",
-                          "11:00 AM",
-                          "12:00 PM",
-                          "1:00 PM",
-                          "2:00 PM",
-                          "3:00 PM",
-                          "4:00 PM",
-                          "5:00 PM",
-                          "6:00 PM",
-                        ].map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="repeat">Repeat</Label>
-                  <Select defaultValue="none">
-                    <SelectTrigger id="repeat">
-                      <SelectValue placeholder="Select repeat option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Do not repeat</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddingSlot(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsAddingSlot(false)}>Add Slots</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Link href="/admin/bookings/new">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            New Booking
+          </Button>
+        </Link>
       </div>
 
-      <div className="flex gap-6">
-        <Card className="w-[300px]">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold">Calendar</h2>
-              <div className="flex items-center">
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm mx-2">{format(new Date(), "MMMM yyyy")}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Bookings</CardTitle>
+          <CardDescription>View and manage all booking requests</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1 relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or phone..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md border" />
-            <div className="mt-4 space-y-2">
-              <h3 className="font-medium text-sm">Available Slots</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {["9:00 AM", "10:00 AM", "2:00 PM", "3:00 PM"].map((time) => (
-                  <div key={time} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-md text-center">
-                    {time}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex-1">
-          <h2 className="font-semibold mb-4">Bookings for {date ? format(date, "MMMM d, yyyy") : "Today"}</h2>
-
-          {filteredBookings.length > 0 ? (
-            <div className="space-y-4">
-              {filteredBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium">
-                      {booking.clientName
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <div>
-                      <div className="font-medium">{booking.clientName}</div>
-                      <div className="text-sm text-muted-foreground">{booking.email}</div>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-medium">{booking.service}</div>
-                    <div className="text-sm text-muted-foreground">{booking.duration}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-medium">{booking.time}</div>
-                    <div
-                      className={`text-xs px-2 py-0.5 rounded-full inline-block ${
-                        booking.status === "confirmed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {booking.status}
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEditBooking(booking)}>Edit Details</DropdownMenuItem>
-                      <DropdownMenuItem>Send Reminder</DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600" onClick={() => handleCancelBooking(booking.id)}>
-                        Cancel Booking
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-[400px] border rounded-lg bg-muted/20">
-              <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-medium text-lg">No Bookings</h3>
-              <p className="text-muted-foreground text-sm mt-1">There are no bookings scheduled for this day.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Edit Booking Dialog */}
-      <Dialog open={isEditingBooking} onOpenChange={setIsEditingBooking}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Booking</DialogTitle>
-            <DialogDescription>Update the booking details.</DialogDescription>
-          </DialogHeader>
-          {selectedBooking && (
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-client-name">Client Name</Label>
-                <Input id="edit-client-name" defaultValue={selectedBooking.clientName} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-client-email">Client Email</Label>
-                <Input id="edit-client-email" defaultValue={selectedBooking.email} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-date">Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(selectedBooking.date, "PPP")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={selectedBooking.date} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-time">Time</Label>
-                  <Select defaultValue={selectedBooking.time}>
-                    <SelectTrigger id="edit-time">
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[
-                        "9:00 AM",
-                        "10:00 AM",
-                        "11:00 AM",
-                        "12:00 PM",
-                        "1:00 PM",
-                        "2:00 PM",
-                        "3:00 PM",
-                        "4:00 PM",
-                        "5:00 PM",
-                      ].map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-status">Status</Label>
-                <Select defaultValue={selectedBooking.status}>
-                  <SelectTrigger id="edit-status">
-                    <SelectValue placeholder="Select status" />
+            <div className="flex gap-2">
+              <div className="w-40">
+                <Select value={filter} onValueChange={setFilter}>
+                  <SelectTrigger>
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Filter" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              <Button variant="outline" size="icon" onClick={fetchBookings}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-8">
+              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p>Loading bookings...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">
+              <p>{error}</p>
+              <Button variant="outline" className="mt-4" onClick={fetchBookings}>
+                Try Again
+              </Button>
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No bookings found</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Service</TableHead>
+                    <TableHead>
+                      <div className="flex items-center">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Date & Time
+                      </div>
+                    </TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBookings.map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <div className="font-medium">{booking.name}</div>
+                        <div className="text-sm text-muted-foreground">{booking.email}</div>
+                      </TableCell>
+                      <TableCell>{booking.service}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <div>
+                            <div>{booking.date}</div>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Clock className="mr-1 h-3 w-3" />
+                              {booking.time}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                      <TableCell>
+                        <div>{getPaymentStatusBadge(booking.paymentStatus)}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {booking.paymentAmount} {booking.paymentCurrency}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <Link href={`/admin/bookings/${booking.id}`}>
+                              <DropdownMenuItem>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                            </Link>
+                            <Link href={`/admin/bookings/${booking.id}/edit`}>
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                            </Link>
+                            <DropdownMenuItem onClick={() => handleDeleteBooking(booking.id)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditingBooking(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveBooking}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
     </div>
   )
 }

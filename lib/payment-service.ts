@@ -1,74 +1,93 @@
-import crypto from "crypto"
+import { pricingConfig } from "@/app/config"
 
-// Define the payment details interface
 export interface PaymentDetails {
   amount: number
   currency: string
   orderId: string
+  customerReference: string
   customerName: string
   customerEmail: string
-  redirectUrl: string
-  customerReference?: string
+  customerPhone: string
+  successUrl: string
+  failureUrl: string
 }
 
-// Generate a numeric order ID (10 digits)
-export function generateNumericOrderId(): string {
-  // Generate a 10-digit numeric order ID
-  return Math.floor(1000000000 + Math.random() * 9000000000).toString()
-}
-
-// Create a function to generate a payment URL
-export async function createPaymentUrl(details: PaymentDetails): Promise<string> {
+export async function createPaymentSession(details: PaymentDetails) {
   try {
-    // Get Kashier credentials from environment variables
-    const merchantId = process.env.KASHIER_MERCHANT_ID
-    const secretKey = process.env.KASHIER_SECRET_KEY
+    console.log("Creating payment session with details:", JSON.stringify(details, null, 2))
 
-    if (!merchantId || !secretKey) {
-      console.error("Missing Kashier credentials:", {
-        merchantIdExists: !!merchantId,
-        secretKeyExists: !!secretKey,
-      })
-      throw new Error("Missing Kashier credentials")
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_PAYMENT_GATEWAY_URL || "https://checkout.kashier.io"}/api/v1/payments`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.KASHIER_API_KEY}`,
+        },
+        body: JSON.stringify({
+          amount: details.amount,
+          currency: details.currency,
+          order_id: details.orderId,
+          customer_reference: details.customerReference,
+          redirect_url: details.successUrl,
+          fail_url: details.failureUrl,
+          customer: {
+            name: details.customerName,
+            email: details.customerEmail,
+            phone: details.customerPhone,
+          },
+          source: {
+            type: "card",
+          },
+        }),
+      },
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Payment gateway error:", errorText)
+      throw new Error(`Payment gateway error: ${response.status} ${errorText}`)
     }
 
-    // Format amount to ensure it has 2 decimal places
-    const formattedAmount = Number(details.amount).toFixed(2)
+    const data = await response.json()
+    console.log("Payment session created:", JSON.stringify(data, null, 2))
 
-    // Generate signature using HMAC-SHA256
-    // Format: merchantId + amount + currency + orderId
-    const signatureString = `${merchantId}${formattedAmount}${details.currency}${details.orderId}`
-    const signature = crypto.createHmac("sha256", secretKey).update(signatureString).digest("hex")
-
-    // Create the payment URL
-    const paymentUrl = new URL("https://checkout.kashier.io")
-
-    // Add required parameters
-    paymentUrl.searchParams.append("merchantId", merchantId)
-    paymentUrl.searchParams.append("amount", formattedAmount)
-    paymentUrl.searchParams.append("currency", details.currency)
-    paymentUrl.searchParams.append("orderId", details.orderId)
-    paymentUrl.searchParams.append("signature", signature)
-
-    // Add redirect URL
-    paymentUrl.searchParams.append("redirectUrl", details.redirectUrl)
-
-    // Set display language to English
-    paymentUrl.searchParams.append("display", "en")
-
-    // Add customer data with reference
-    const customerData = {
-      name: details.customerName,
-      email: details.customerEmail,
-      reference: details.customerReference || `REF-${details.orderId}`,
+    return {
+      success: true,
+      paymentUrl: data.payment_url || data.redirect_url,
+      sessionId: data.payment_id || data.id,
     }
-    paymentUrl.searchParams.append("customer", JSON.stringify(customerData))
-
-    console.log("Generated payment URL:", paymentUrl.toString())
-
-    return paymentUrl.toString()
   } catch (error) {
-    console.error("Error creating payment URL:", error)
-    throw error
+    console.error("Error creating payment session:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown payment error",
+    }
+  }
+}
+
+export function calculatePrice(
+  isInternational: boolean,
+  promoCode?: string,
+): {
+  price: number
+  currency: string
+  discount: number
+} {
+  // Determine base price and currency based on location
+  let price = isInternational ? pricingConfig.internationalPrice : pricingConfig.defaultPrice
+  const currency = isInternational ? pricingConfig.internationalCurrency : pricingConfig.currency
+
+  // Apply promo code if valid
+  let discount = 0
+  if (promoCode && pricingConfig.promoCodes[promoCode]) {
+    discount = pricingConfig.promoCodes[promoCode]
+    price = price * (1 - discount / 100)
+  }
+
+  return {
+    price: Math.round(price), // Round to avoid floating point issues
+    currency,
+    discount,
   }
 }

@@ -1,79 +1,53 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Calendar, Check } from "lucide-react"
-
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { SiteHeader } from "@/components/layout/site-header"
-import { SiteFooter } from "@/components/layout/site-footer"
-import { PageHeader } from "@/components/layout/page-header"
-import { generateICalendarFile } from "@/lib/google-calendar"
-
-interface BookingDetails {
-  name: string
-  email: string
-  date: string
-  timeSlot: string
-  meetingLink: string
-  calendarEventLink: string
-  orderId: string
-  promoCodeApplied: string | null
-}
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar, Check, Loader2 } from "lucide-react"
 
 export default function ConfirmationPage() {
   const searchParams = useSearchParams()
-  const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null)
-  const [paymentStatus, setPaymentStatus] = useState<"success" | "pending" | "failed">("pending")
+  const orderId = searchParams.get("orderId")
+  const [isLoading, setIsLoading] = useState(true)
+  const [bookingDetails, setBookingDetails] = useState<any>(null)
 
   useEffect(() => {
-    // Get booking details from session storage
+    // Retrieve booking details from session storage
     const storedDetails = sessionStorage.getItem("bookingDetails")
+
     if (storedDetails) {
       setBookingDetails(JSON.parse(storedDetails))
     }
 
-    // Check payment status from URL parameters
-    const orderId = searchParams.get("orderId")
-    const paymentStatus = searchParams.get("paymentStatus")
+    setIsLoading(false)
+  }, [])
 
-    if (paymentStatus === "success") {
-      setPaymentStatus("success")
-    } else if (paymentStatus === "failed") {
-      setPaymentStatus("failed")
-    } else {
-      // If no status is provided, assume success for now
-      // In a real implementation, you would verify with your backend
-      setPaymentStatus("success")
-    }
-  }, [searchParams])
-
-  // Function to download iCalendar file
-  const downloadICalendarFile = () => {
+  const downloadCalendarFile = () => {
     if (!bookingDetails) return
 
-    const startTime = new Date(bookingDetails.date)
-    const [hours, minutes] = bookingDetails.timeSlot
-      .match(/(\d+):(\d+)/)
-      ?.slice(1)
-      .map(Number) || [0, 0]
-    const isPM = bookingDetails.timeSlot.includes("PM") && hours < 12
-    startTime.setHours(isPM ? hours + 12 : hours, minutes, 0)
+    // Create a calendar event
+    const startDate = new Date(bookingDetails.date)
+    const [hours, minutes] = bookingDetails.time.split(":")
+    startDate.setHours(Number.parseInt(hours), Number.parseInt(minutes), 0)
 
-    const endTime = new Date(startTime)
-    endTime.setHours(endTime.getHours() + 1)
+    const endDate = new Date(startDate)
+    endDate.setHours(endDate.getHours() + 1)
 
-    const iCalContent = generateICalendarFile({
-      summary: "Coaching Session with Hagar Moharam",
-      description: `60-Minute Coaching Session\nMeeting Link: ${bookingDetails.meetingLink}`,
-      startTime,
-      endTime,
-      location: bookingDetails.meetingLink,
-    })
+    const event = {
+      title: `Coaching Session with Hagar Moharam`,
+      description: `${bookingDetails.service}\n\nAdditional notes: ${bookingDetails.message || "None"}`,
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
+      location: "Online (link will be sent via email)",
+    }
 
-    const blob = new Blob([iCalContent], { type: "text/calendar;charset=utf-8" })
+    // Generate iCalendar file
+    const icsContent = generateICS(event)
+
+    // Create and download the file
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
@@ -83,155 +57,135 @@ export default function ConfirmationPage() {
     document.body.removeChild(link)
   }
 
+  const generateICS = (event: any) => {
+    return `BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+SUMMARY:${event.title}
+DESCRIPTION:${event.description.replace(/\n/g, "\\n")}
+LOCATION:${event.location}
+DTSTART:${formatICSDate(new Date(event.start))}
+DTEND:${formatICSDate(new Date(event.end))}
+END:VEVENT
+END:VCALENDAR`
+  }
+
+  const formatICSDate = (date: Date) => {
+    return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-16 px-4 text-center">
+        <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+        <h2 className="text-2xl font-bold mb-2">Processing your booking...</h2>
+        <p className="text-gray-600">Please wait while we confirm your appointment.</p>
+      </div>
+    )
+  }
+
   if (!bookingDetails) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <SiteHeader />
-        <main className="flex-1">
-          <PageHeader title="Booking Confirmation" description="Thank you for booking a session with Hagar Moharam." />
-          <section className="w-full py-12 md:py-24 lg:py-32">
-            <div className="container px-4 md:px-6">
-              <Card className="mx-auto max-w-2xl">
-                <CardHeader>
-                  <CardTitle className="text-center">Booking Information Not Found</CardTitle>
-                  <CardDescription className="text-center">
-                    We couldn't find your booking details. Please contact us for assistance.
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button asChild className="w-full">
-                    <Link href="/">Return to Homepage</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-          </section>
-        </main>
-        <SiteFooter />
+      <div className="container mx-auto py-12 px-4">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="text-center text-red-500">Booking Information Not Found</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center mb-4">
+              We couldn't find your booking details. This might happen if you refreshed the page or accessed this page
+              directly.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild className="w-full">
+              <Link href="/book">Return to Booking Page</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SiteHeader />
-      <main className="flex-1">
-        <PageHeader title="Booking Confirmation" description="Thank you for booking a session with Hagar Moharam." />
-        <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <Card className="mx-auto max-w-2xl bg-bg-light border-primary">
-              <CardHeader>
-                <div className="mx-auto rounded-full bg-primary/20 p-3 mb-4">
-                  {paymentStatus === "success" ? (
-                    <Check className="h-8 w-8 text-primary" />
-                  ) : (
-                    <div className="h-8 w-8 text-yellow-500">!</div>
-                  )}
-                </div>
-                <CardTitle className="text-center text-2xl text-primary">
-                  {paymentStatus === "success"
-                    ? "Booking Confirmed!"
-                    : paymentStatus === "pending"
-                      ? "Payment Pending"
-                      : "Payment Failed"}
-                </CardTitle>
-                <CardDescription className="text-center text-lg">
-                  {paymentStatus === "success"
-                    ? "Thank you for booking a session with Hagar Moharam."
-                    : paymentStatus === "pending"
-                      ? "Your payment is being processed."
-                      : "There was an issue with your payment."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-center">
-                <p>
-                  {paymentStatus === "success" ? (
-                    <>
-                      We've sent a confirmation email to <span className="font-medium">{bookingDetails.email}</span>
-                    </>
-                  ) : paymentStatus === "pending" ? (
-                    <>
-                      We'll send a confirmation email to <span className="font-medium">{bookingDetails.email}</span>{" "}
-                      once your payment is processed.
-                    </>
-                  ) : (
-                    <>Please try again or contact us for assistance.</>
-                  )}
-                </p>
-                <div className="rounded-lg border p-4 bg-white">
-                  <h3 className="font-medium text-primary">Booking Details</h3>
-                  <div className="mt-3 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Service:</span>
-                      <span>60-Minute Coaching Session</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date:</span>
-                      <span>{new Date(bookingDetails.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Time:</span>
-                      <span>{bookingDetails.timeSlot}</span>
-                    </div>
-                    {bookingDetails.promoCodeApplied && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Discount:</span>
-                        <span className="text-primary">{bookingDetails.promoCodeApplied}</span>
-                      </div>
-                    )}
-                    {paymentStatus === "success" && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Meeting Link:</span>
-                        <a
-                          href={bookingDetails.meetingLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          Join Meeting
-                        </a>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Order ID:</span>
-                      <span>{bookingDetails.orderId}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {paymentStatus === "success" && (
-                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="flex-1 border-primary/20 text-primary hover:bg-primary/10"
-                    >
-                      <a href={bookingDetails.calendarEventLink} target="_blank" rel="noopener noreferrer">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Add to Google Calendar
-                      </a>
-                    </Button>
-                    <Button
-                      onClick={downloadICalendarFile}
-                      variant="outline"
-                      className="flex-1 border-primary/20 text-primary hover:bg-primary/10"
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Download Calendar File (.ics)
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full">
-                  <Link href="/">Return to Homepage</Link>
-                </Button>
-              </CardFooter>
-            </Card>
+    <div className="container mx-auto py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+            <Check className="h-8 w-8 text-green-600" />
           </div>
-        </section>
-      </main>
-      <SiteFooter />
+          <h1 className="text-3xl font-bold mb-2 text-primary">Booking Confirmed!</h1>
+          <p className="text-gray-600">Thank you for booking a session with Hagar Moharam.</p>
+        </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Appointment Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Name</p>
+                <p className="font-medium">{bookingDetails.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Email</p>
+                <p className="font-medium">{bookingDetails.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Service</p>
+                <p className="font-medium">{bookingDetails.service}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Order ID</p>
+                <p className="font-medium">{bookingDetails.orderId}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Date</p>
+                <p className="font-medium">{bookingDetails.date}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Time</p>
+                <p className="font-medium">{bookingDetails.time}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8 bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle>What's Next?</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>
+              A confirmation email has been sent to <strong>{bookingDetails.email}</strong> with all the details of your
+              booking.
+            </p>
+            <p>
+              The session will be conducted online via Zoom, and the link will be sent to you before the scheduled time.
+            </p>
+            <p>If you need to reschedule or cancel your appointment, please contact us at least 24 hours in advance.</p>
+          </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" className="w-full sm:w-auto flex items-center" onClick={downloadCalendarFile}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Add to Calendar
+            </Button>
+            <Button variant="outline" className="w-full sm:w-auto flex items-center" asChild>
+              <a href={`mailto:contact@hagarmoharam.com?subject=Regarding%20Booking%20${bookingDetails.orderId}`}>
+                Contact Us
+              </a>
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <div className="text-center">
+          <Button asChild>
+            <Link href="/">Return to Homepage</Link>
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
