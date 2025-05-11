@@ -53,7 +53,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   }
 }
 
-export function generateTestEmail() {
+export async function generateTestEmail() {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Test Email</h2>
@@ -64,7 +64,7 @@ export function generateTestEmail() {
   `
 }
 
-export function generateBookingConfirmationEmail(
+export async function generateBookingConfirmationEmail(
   name: string,
   service: string,
   date: string,
