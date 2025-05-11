@@ -5,20 +5,19 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { format, addDays } from "date-fns"
-import { CalendarIcon, Clock, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { bookingContent } from "@/app/config"
+import { bookingConfig } from "@/app/config"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { isValidPhoneNumber } from "react-phone-number-input"
+import { CalendarIcon, Clock, User, Mail, Phone, MessageSquare, CreditCard, Loader2 } from "lucide-react"
 
 export default function BookingPage() {
   const router = useRouter()
@@ -30,13 +29,11 @@ export default function BookingPage() {
   const [phone, setPhone] = useState("")
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [timeSlot, setTimeSlot] = useState<string | undefined>(undefined)
-  const [service, setService] = useState("Life Coaching Session")
   const [message, setMessage] = useState("")
   const [isInternational, setIsInternational] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const [step, setStep] = useState(1)
-  const [availableSlots, setAvailableSlots] = useState<string[]>(bookingContent.timeSlots)
+  const [availableSlots, setAvailableSlots] = useState<string[]>(bookingConfig.availableTimeSlots)
 
   // Fetch available time slots when date changes
   useEffect(() => {
@@ -54,11 +51,11 @@ export default function BookingPage() {
           setAvailableSlots(data.availableSlots)
         } else {
           console.error("Error fetching available slots:", data.error)
-          setAvailableSlots(bookingContent.timeSlots)
+          setAvailableSlots(bookingConfig.availableTimeSlots)
         }
       } catch (error) {
         console.error("Error fetching available slots:", error)
-        setAvailableSlots(bookingContent.timeSlots)
+        setAvailableSlots(bookingConfig.availableTimeSlots)
       }
     }
 
@@ -85,28 +82,16 @@ export default function BookingPage() {
       errors.phone = "Please enter a valid phone number"
     }
 
-    if (step === 1 && !date) {
+    if (!date) {
       errors.date = "Please select a date"
     }
 
-    if (step === 1 && !timeSlot) {
+    if (!timeSlot) {
       errors.time = "Please select a time slot"
     }
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
-  }
-
-  const handleNextStep = () => {
-    if (validateForm()) {
-      setStep(step + 1)
-      window.scrollTo(0, 0)
-    }
-  }
-
-  const handlePrevStep = () => {
-    setStep(step - 1)
-    window.scrollTo(0, 0)
   }
 
   // Handle form submission
@@ -132,7 +117,7 @@ export default function BookingPage() {
           customerName: name,
           customerEmail: email,
           customerPhone: phone,
-          service,
+          service: "Life Coaching Session (60 minutes)",
           date: format(date!, "yyyy-MM-dd"),
           time: timeSlot,
           message,
@@ -152,7 +137,7 @@ export default function BookingPage() {
           name,
           email,
           phone,
-          service,
+          service: "Life Coaching Session (60 minutes)",
           date: format(date!, "yyyy-MM-dd"),
           time: timeSlot,
           message,
@@ -172,10 +157,13 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="container mx-auto py-12 px-4">
+    <div className="container mx-auto py-12 px-4 bg-gradient-to-b from-[#f8f9ff] to-[#f0f4ff]">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-primary mb-4">{bookingContent.hero.title}</h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">{bookingContent.hero.description}</p>
+        <h1 className="text-4xl font-bold text-[#5d6bb0] mb-4">Book Your Coaching Session</h1>
+        <p className="text-xl text-[#6b7280] max-w-2xl mx-auto">
+          Schedule your 60-minute life coaching session with Hagar Moharam and take the first step towards positive
+          change.
+        </p>
       </div>
 
       {error && (
@@ -186,70 +174,39 @@ export default function BookingPage() {
         </Alert>
       )}
 
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-6 bg-primary/5 border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-primary">Book Your Session</h2>
-            <div className="flex items-center space-x-2">
-              <div
-                className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-full",
-                  step >= 1 ? "bg-primary text-white" : "border border-gray-300 text-gray-400",
-                )}
-              >
-                1
-              </div>
-              <div className={cn("h-px w-6", step >= 2 ? "bg-primary" : "bg-gray-300")} />
-              <div
-                className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-full",
-                  step >= 2 ? "bg-primary text-white" : "border border-gray-300 text-gray-400",
-                )}
-              >
-                2
-              </div>
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="p-6 bg-[#e8edff] border-b border-[#d1dbff]">
+          <div className="flex items-center">
+            <div className="bg-[#5d6bb0] p-3 rounded-full text-white mr-4">
+              <CalendarIcon className="h-6 w-6" />
             </div>
+            <h2 className="text-2xl font-semibold text-[#5d6bb0]">Life Coaching Session (60 minutes)</h2>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {step === 1 ? (
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="service">Service Type</Label>
-                <RadioGroup value={service} onValueChange={setService} className="flex flex-col space-y-2 mt-2">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Life Coaching Session" id="coaching" />
-                    <Label htmlFor="coaching">Life Coaching Session (60 minutes)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Career Coaching" id="career" />
-                    <Label htmlFor="career">Career Coaching (60 minutes)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Consultation" id="consultation" />
-                    <Label htmlFor="consultation">Initial Consultation (30 minutes)</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Select Date</Label>
+                <Label htmlFor="date" className="text-[#5d6bb0] font-medium flex items-center">
+                  <CalendarIcon className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                  Select Date
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal border-[#d1dbff] hover:bg-[#f0f4ff] hover:border-[#5d6bb0]",
                         !date && "text-muted-foreground",
                         formErrors.date && "border-red-500",
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                      <CalendarIcon className="mr-2 h-4 w-4 text-[#5d6bb0]" />
+                      {date ? format(date, "EEEE, MMMM d, yyyy") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0 border-[#d1dbff]">
                     <Calendar
                       mode="single"
                       selected={date}
@@ -260,6 +217,7 @@ export default function BookingPage() {
                         return date < today || date > addDays(today, 30)
                       }}
                       initialFocus
+                      className="rounded-md"
                     />
                   </PopoverContent>
                 </Popover>
@@ -268,7 +226,10 @@ export default function BookingPage() {
 
               {date && (
                 <div className="space-y-2">
-                  <Label>Select Time</Label>
+                  <Label className="text-[#5d6bb0] font-medium flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                    Select Time
+                  </Label>
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     {availableSlots.length > 0 ? (
                       availableSlots.map((slot) => (
@@ -276,7 +237,12 @@ export default function BookingPage() {
                           key={slot}
                           type="button"
                           variant={timeSlot === slot ? "default" : "outline"}
-                          className="text-sm"
+                          className={cn(
+                            "text-sm",
+                            timeSlot === slot
+                              ? "bg-[#5d6bb0] hover:bg-[#4a5899] text-white"
+                              : "border-[#d1dbff] text-[#5d6bb0] hover:bg-[#f0f4ff] hover:border-[#5d6bb0]",
+                          )}
                           onClick={() => setTimeSlot(slot)}
                         >
                           <Clock className="mr-2 h-4 w-4" />
@@ -284,7 +250,7 @@ export default function BookingPage() {
                         </Button>
                       ))
                     ) : (
-                      <div className="col-span-3 text-center py-4 text-gray-500">
+                      <div className="col-span-3 text-center py-4 text-[#6b7280] bg-[#f8f9ff] rounded-md border border-[#d1dbff]">
                         No available slots for this date. Please select another date.
                       </div>
                     )}
@@ -293,36 +259,51 @@ export default function BookingPage() {
                 </div>
               )}
             </div>
-          ) : (
+
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="name" className="text-[#5d6bb0] font-medium flex items-center">
+                  <User className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                  Full Name
+                </Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className={formErrors.name ? "border-red-500" : ""}
+                  className={cn(
+                    "border-[#d1dbff] focus:border-[#5d6bb0] focus:ring-[#5d6bb0]",
+                    formErrors.name ? "border-red-500" : "",
+                  )}
                   required
                 />
                 {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
+                <Label htmlFor="email" className="text-[#5d6bb0] font-medium flex items-center">
+                  <Mail className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={formErrors.email ? "border-red-500" : ""}
+                  className={cn(
+                    "border-[#d1dbff] focus:border-[#5d6bb0] focus:ring-[#5d6bb0]",
+                    formErrors.email ? "border-red-500" : "",
+                  )}
                   required
                 />
                 {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
-                <div className={`rounded-md border ${formErrors.phone ? "border-red-500" : "border-input"}`}>
+                <Label htmlFor="phone" className="text-[#5d6bb0] font-medium flex items-center">
+                  <Phone className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                  Phone Number
+                </Label>
+                <div className={cn("rounded-md border", formErrors.phone ? "border-red-500" : "border-[#d1dbff]")}>
                   <PhoneInput
                     international
                     defaultCountry="EG"
@@ -333,78 +314,64 @@ export default function BookingPage() {
                 </div>
                 {formErrors.phone && <p className="text-red-500 text-sm">{formErrors.phone}</p>}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">Additional Information (Optional)</Label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Please share any specific topics or questions you'd like to address in our session."
-                  className="min-h-[100px]"
-                />
-              </div>
-
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center mb-4">
-                  <input
-                    id="international"
-                    type="checkbox"
-                    checked={isInternational}
-                    onChange={(e) => setIsInternational(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="international" className="ml-2 block text-sm text-gray-700">
-                    International payment (USD)
-                  </label>
-                </div>
-
-                <div className="p-4 bg-gray-50 rounded-md">
-                  <div className="flex justify-between font-medium">
-                    <span>Session Fee:</span>
-                    <span className="text-primary">
-                      {isInternational
-                        ? `$${bookingContent.sessionPrice.international}`
-                        : `${bookingContent.sessionPrice.egypt}`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {formErrors.submit && (
-                <Alert className="bg-red-50 border-red-200">
-                  <AlertDescription className="text-red-800">{formErrors.submit}</AlertDescription>
-                </Alert>
-              )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="message" className="text-[#5d6bb0] font-medium flex items-center">
+              <MessageSquare className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+              Additional Information (Optional)
+            </Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Please share any specific topics or questions you'd like to address in our session."
+              className="min-h-[100px] border-[#d1dbff] focus:border-[#5d6bb0] focus:ring-[#5d6bb0]"
+            />
+          </div>
+
+          <div className="border-t border-[#d1dbff] pt-6">
+            <div className="flex items-center mb-4">
+              <input
+                id="international"
+                type="checkbox"
+                checked={isInternational}
+                onChange={(e) => setIsInternational(e.target.checked)}
+                className="h-4 w-4 rounded border-[#d1dbff] text-[#5d6bb0] focus:ring-[#5d6bb0]"
+              />
+              <label htmlFor="international" className="ml-2 block text-sm text-[#6b7280]">
+                International payment (USD)
+              </label>
+            </div>
+
+            <div className="p-4 bg-[#f8f9ff] rounded-md border border-[#d1dbff]">
+              <div className="flex justify-between items-center">
+                <span className="text-[#5d6bb0] font-medium flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2 text-[#5d6bb0]" />
+                  Session Fee:
+                </span>
+                <span className="text-[#5d6bb0] font-bold text-lg">{isInternational ? "$30.00" : "EGP 600"}</span>
+              </div>
+            </div>
+          </div>
+
+          {formErrors.submit && (
+            <Alert className="bg-red-50 border-red-200">
+              <AlertDescription className="text-red-800">{formErrors.submit}</AlertDescription>
+            </Alert>
           )}
 
-          <div className="flex justify-between pt-4 border-t border-gray-200">
-            {step === 2 ? (
+          <Button type="submit" className="w-full bg-[#5d6bb0] hover:bg-[#4a5899] text-white" disabled={isLoading}>
+            {isLoading ? (
               <>
-                <Button type="button" variant="outline" onClick={handlePrevStep}>
-                  Back
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Confirm & Pay"
-                  )}
-                </Button>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
               </>
             ) : (
-              <>
-                <div></div>
-                <Button type="button" onClick={handleNextStep} disabled={!date || !timeSlot}>
-                  Continue
-                </Button>
-              </>
+              `Proceed to Payment (${isInternational ? "$30.00" : "EGP 600"})`
             )}
-          </div>
+          </Button>
         </form>
       </div>
     </div>

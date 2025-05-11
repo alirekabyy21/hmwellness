@@ -53,7 +53,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   }
 }
 
-export async function generateTestEmail() {
+export async function generateTestEmail(): Promise<string> {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Test Email</h2>
@@ -71,32 +71,32 @@ export async function generateBookingConfirmationEmail(
   time: string,
   meetingLink = "",
   calendarLink = "",
-) {
+): Promise<string> {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background-color: #8a2be2; color: white; padding: 20px; text-align: center;">
+      <div style="background-color: #5d6bb0; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
         <h1 style="margin: 0;">Booking Confirmation</h1>
         <p style="margin: 10px 0 0;">Your session with Hagar Moharam is confirmed!</p>
       </div>
       
-      <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+      <div style="padding: 20px; border: 1px solid #e8edff; border-top: none; border-radius: 0 0 8px 8px;">
         <p>Hello ${name},</p>
         
         <p>Thank you for booking a ${service} with Hagar Moharam. Your session has been confirmed for ${date} at ${time}.</p>
         
-        <div style="background-color: #f8f0ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #8a2be2;">Session Details</h3>
+        <div style="background-color: #f8f9ff; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #e8edff;">
+          <h3 style="margin-top: 0; color: #5d6bb0;">Session Details</h3>
           <p><strong>Service:</strong> ${service}</p>
           <p><strong>Date:</strong> ${date}</p>
           <p><strong>Time:</strong> ${time}</p>
           ${
             meetingLink
-              ? `<p><strong>Meeting Link:</strong> <a href="${meetingLink}" style="color: #8a2be2;">${meetingLink}</a></p>`
+              ? `<p><strong>Meeting Link:</strong> <a href="${meetingLink}" style="color: #5d6bb0;">${meetingLink}</a></p>`
               : `<p><strong>Meeting Link:</strong> A Zoom link will be sent to you before the session.</p>`
           }
           ${
             calendarLink
-              ? `<p><strong>Add to Calendar:</strong> <a href="${calendarLink}" style="color: #8a2be2;">Add to Google Calendar</a></p>`
+              ? `<p><strong>Add to Calendar:</strong> <a href="${calendarLink}" style="color: #5d6bb0;">Add to Google Calendar</a></p>`
               : ""
           }
         </div>
@@ -108,11 +108,11 @@ export async function generateBookingConfirmationEmail(
         <p>Warm regards,<br>Hagar Moharam<br>Life Coach</p>
       </div>
       
-      <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666;">
+      <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 8px; margin-top: 20px;">
         <p>© ${new Date().getFullYear()} Hagar Moharam. All rights reserved.</p>
         <p>
-          <a href="https://hagarmoharam.com/privacy" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Privacy Policy</a> | 
-          <a href="https://hagarmoharam.com/terms" style="color: #8a2be2; text-decoration: none; margin: 0 10px;">Terms & Conditions</a>
+          <a href="https://hagarmoharam.com/privacy" style="color: #5d6bb0; text-decoration: none; margin: 0 10px;">Privacy Policy</a> | 
+          <a href="https://hagarmoharam.com/terms" style="color: #5d6bb0; text-decoration: none; margin: 0 10px;">Terms & Conditions</a>
         </p>
       </div>
     </div>

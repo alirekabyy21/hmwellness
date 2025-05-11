@@ -1,418 +1,230 @@
 export const siteConfig = {
   name: "Hagar Moharam",
-  description: "Professional Life Coach",
-  url: "https://hagarmoharam.com",
-  ogImage: "https://hagarmoharam.com/og.jpg",
-  links: {
-    instagram: "https://instagram.com/hagarmoharam",
-    facebook: "https://facebook.com/hagarmoharam",
-  },
+  coachName: "Hagar Moharam",
+  description: "Professional Life Coach helping you transform your life and achieve your goals.",
+  domain: "hagarmoharam.com",
+  email: "hello@hagarmoharam.com",
+  phone: "+20 123 456 7890",
+  address: "Cairo, Egypt",
 }
 
-// Colors - Edit these to change your website's color scheme
 export const colors = {
-  primary: "#8a2be2", // Bright purple - main color
-  secondary: "#6a0dad", // Darker purple - accent color
+  primary: "#5d6bb0",
+  secondary: "#4a5899",
+  accent: "#8a94d3",
   background: {
-    light: "#f8f0ff", // Light purple background
-    medium: "#f0e6ff", // Medium purple background
-    dark: "#e6d9ff", // Dark purple background
+    light: "#f8f9ff",
+    medium: "#f0f4ff",
+    dark: "#e8edff",
   },
   text: {
-    dark: "#2c3e50", // Dark text
-    medium: "#34495e", // Medium text
-    light: "#7f8c8d", // Light text
+    primary: "#2d3748",
+    secondary: "#6b7280",
+    accent: "#5d6bb0",
   },
+  border: "#d1dbff",
 }
 
-// Home Page Content
 export const homeContent = {
-  // Hero Section
   hero: {
-    title: "Transform Your Life with Professional Coaching",
+    title: "Transform Your Life With Professional Coaching",
     description:
-      "Discover your true potential with Hagar Moharam, a certified life coach dedicated to helping you achieve your goals and live a more fulfilling life.",
-    image: "/placeholder.svg?height=550&width=550", // Replace with your image
+      "Discover your true potential and overcome obstacles with personalized coaching sessions designed to help you achieve your goals.",
+    image: "/placeholder.svg?height=550&width=550",
   },
-
-  // Services Section
   services: {
-    title: "Why Choose Me",
-    subtitle: "Personalized Coaching Experience",
+    title: "My Services",
+    subtitle: "Personalized Coaching for Every Aspect of Your Life",
     description:
-      "I provide tailored coaching sessions designed to address your specific needs and help you overcome obstacles in your personal and professional life.",
+      "I offer a range of coaching services designed to help you overcome challenges and achieve your goals in various areas of life.",
     items: [
       {
-        title: "Personal Growth",
-        description: "Develop self-awareness, build confidence, and discover your true purpose in life.",
+        title: "Life Coaching",
+        description:
+          "Gain clarity, overcome obstacles, and create a fulfilling life aligned with your values and aspirations.",
+        icon: "users",
       },
       {
-        title: "Goal Achievement",
-        description: "Set meaningful goals, create actionable plans, and stay accountable to achieve success.",
+        title: "Career Coaching",
+        description:
+          "Navigate career transitions, improve leadership skills, and achieve professional growth and satisfaction.",
+        icon: "briefcase",
       },
       {
-        title: "Work-Life Balance",
-        description: "Find harmony between your professional ambitions and personal well-being.",
+        title: "Mindfulness Coaching",
+        description:
+          "Learn techniques to reduce stress, increase focus, and develop greater awareness and emotional balance.",
+        icon: "heart",
       },
     ],
   },
-
-  // Testimonials
   testimonials: {
     title: "What My Clients Say",
-    description: "Read testimonials from people who have transformed their lives through coaching.",
+    description: "Read about the experiences and transformations of people I've worked with.",
     items: [
       {
-        text: "Working with Hagar has been transformative. Her guidance helped me clarify my goals and take meaningful steps toward achieving them. I'm more confident and focused than ever before.",
-        author: "Sarah K.",
-        location: "Cairo, Egypt",
+        text: "Working with Hagar has been transformative. Her guidance helped me gain clarity about my goals and develop practical strategies to achieve them.",
+        author: "Sarah M.",
+        location: "Cairo",
       },
       {
-        text: "Hagar's coaching style is both compassionate and effective. She helped me overcome obstacles that had been holding me back for years. I highly recommend her services to anyone looking to grow.",
-        author: "Ahmed H.",
-        location: "Alexandria, Egypt",
+        text: "Hagar's coaching approach is both compassionate and effective. She helped me overcome limiting beliefs that were holding me back for years.",
+        author: "Ahmed K.",
+        location: "Alexandria",
       },
     ],
   },
 }
 
-// About Page Content
-export const aboutContent = {
-  hero: {
-    title: "About Hagar Moharam",
-    description: [
-      "I'm a certified life coach with over 10 years of experience helping people transform their lives. My journey began when I discovered the power of coaching in my own life, and I've been passionate about sharing that transformation with others ever since.",
-      "With a background in psychology and extensive training in various coaching methodologies, I provide a unique approach that combines evidence-based techniques with intuitive guidance.",
-      "My mission is to help you discover your true potential, overcome obstacles, and create a life that aligns with your deepest values and aspirations.",
-    ],
-    image: "/placeholder.svg?height=800&width=800", // Replace with your image
-  },
-
-  qualifications: {
-    title: "My Qualifications",
-    sections: [
-      {
-        title: "Certifications",
-        items: [
-          "Certified Professional Coach (ICF)",
-          "Neuro-Linguistic Programming Practitioner",
-          "Emotional Intelligence Coach",
-          "Mindfulness-Based Stress Reduction",
-        ],
-      },
-      {
-        title: "Education",
-        items: [
-          "Master's in Psychology",
-          "Bachelor's in Human Development",
-          "Advanced Training in Positive Psychology",
-          "Continuing Education in Coaching Techniques",
-        ],
-      },
-      {
-        title: "Experience",
-        items: [
-          "10+ Years as a Professional Coach",
-          "Worked with 500+ Clients",
-          "Corporate Wellness Programs",
-          "Group and Individual Coaching",
-        ],
-      },
-    ],
-  },
-
-  philosophy: {
-    title: "My Coaching Philosophy",
-    description:
-      "I believe that everyone has the inner resources they need to create positive change in their lives. My role is to help you access those resources and use them effectively.",
-    items: [
-      {
-        title: "Client-Centered Approach",
-        description:
-          "I tailor my coaching to your unique needs, goals, and learning style. There's no one-size-fits-all in my practice. Each session is designed specifically for you.",
-      },
-      {
-        title: "Holistic Perspective",
-        description:
-          "I consider all aspects of your life—career, relationships, health, personal growth—because they're all interconnected. Improvement in one area often leads to positive changes in others.",
-      },
-      {
-        title: "Action-Oriented",
-        description:
-          "While reflection is important, I emphasize taking concrete steps toward your goals. Each session ends with clear action items to maintain momentum.",
-      },
-      {
-        title: "Compassionate Accountability",
-        description:
-          "I provide a supportive environment while also holding you accountable to your commitments. This balance helps you stay motivated and make consistent progress.",
-      },
-    ],
-  },
-}
-
-// Services Page Content
 export const servicesContent = {
-  hero: {
-    title: "Coaching Services",
-    description:
-      "Discover the transformative coaching services designed to help you achieve your goals and live a more fulfilling life.",
-  },
-
   services: [
     {
-      title: "Personal Development",
-      subtitle: "Discover your true potential",
+      title: "Life Coaching",
+      subtitle: "Find Direction and Purpose",
       description:
-        "This coaching program focuses on self-discovery, building confidence, and developing a growth mindset. We'll work together to identify your strengths, overcome limiting beliefs, and create a personal development plan that aligns with your values.",
+        "My life coaching sessions help you gain clarity about your values, overcome obstacles, and create a fulfilling life aligned with your true self.",
       features: [
-        "Self-awareness and emotional intelligence",
-        "Confidence building and self-esteem",
-        "Overcoming limiting beliefs",
-        "Developing resilience and adaptability",
+        "Identify core values and life purpose",
+        "Overcome limiting beliefs and self-doubt",
+        "Develop effective goal-setting strategies",
+        "Create actionable plans for personal growth",
+        "Build resilience and emotional intelligence",
       ],
     },
     {
       title: "Career Coaching",
-      subtitle: "Achieve professional success",
+      subtitle: "Achieve Professional Success",
       description:
-        "Whether you're looking to advance in your current role, change careers, or start your own business, this coaching program will help you clarify your professional goals and develop strategies to achieve them.",
+        "Navigate career transitions, improve leadership skills, and achieve professional growth with personalized career coaching.",
       features: [
-        "Career path clarification",
-        "Professional goal setting",
-        "Leadership development",
-        "Work-life balance strategies",
+        "Clarify career goals and aspirations",
+        "Develop leadership and communication skills",
+        "Navigate career transitions and challenges",
+        "Improve work-life balance",
+        "Build confidence in professional settings",
       ],
     },
     {
-      title: "Life Transition Coaching",
-      subtitle: "Navigate change with confidence",
+      title: "Relationship Coaching",
+      subtitle: "Enhance Your Connections",
       description:
-        "Major life transitions can be challenging. This coaching program provides support and guidance as you navigate significant changes such as relocation, career shifts, relationship changes, or other life transitions.",
+        "Improve communication, resolve conflicts, and build healthier relationships with partners, family members, and colleagues.",
       features: [
-        "Adapting to change",
-        "Decision-making strategies",
-        "Building support systems",
-        "Creating new routines and habits",
+        "Enhance communication skills",
+        "Develop conflict resolution strategies",
+        "Set healthy boundaries",
+        "Deepen emotional connections",
+        "Navigate relationship transitions",
       ],
     },
   ],
-
   process: {
-    title: "How It Works",
-    description:
-      "My coaching process is designed to provide you with clarity, support, and actionable steps to achieve your goals.",
     steps: [
       {
         number: 1,
         title: "Discovery",
-        description: "We begin with a comprehensive assessment of your current situation, goals, and challenges.",
+        description: "We begin with an in-depth conversation about your current situation, challenges, and goals.",
       },
       {
         number: 2,
-        title: "Planning",
-        description: "Together, we create a personalized action plan with clear objectives and milestones.",
+        title: "Strategy",
+        description:
+          "Together, we develop a personalized coaching plan tailored to your specific needs and aspirations.",
       },
       {
         number: 3,
-        title: "Implementation",
-        description: "You take action with ongoing support, guidance, and accountability from me.",
+        title: "Action",
+        description: "You'll implement agreed-upon actions with ongoing support and accountability from me.",
       },
       {
         number: 4,
-        title: "Evaluation",
-        description: "We regularly review progress, celebrate successes, and adjust strategies as needed.",
-      },
-    ],
-  },
-
-  pricing: {
-    title: "Pricing",
-    description: "Invest in yourself with my coaching services.",
-    plans: [
-      {
-        title: "Single Session",
-        description: "One 60-minute coaching session",
-        priceEgypt: "600 EGP",
-        priceInternational: "$30",
-        period: "per session",
-        features: [
-          "60-minute online session",
-          "Session recording available",
-          "Follow-up email with action items",
-          "Email support for 1 week",
-        ],
-        featured: false,
-      },
-      {
-        title: "Monthly Package",
-        description: "Four 60-minute sessions",
-        priceEgypt: "2000 EGP",
-        priceInternational: "$100",
-        period: "per month",
-        features: [
-          "4 weekly 60-minute sessions",
-          "Session recordings available",
-          "Detailed action plan",
-          "Session recordings available",
-          "Unlimited email support",
-          "Progress tracking",
-        ],
-        featured: true,
-      },
-      {
-        title: "3-Month Program",
-        description: "Twelve 60-minute sessions",
-        priceEgypt: "5400 EGP",
-        priceInternational: "$270",
-        period: "($90 per month)",
-        features: [
-          "12 weekly 60-minute sessions",
-          "Session recordings available",
-          "Comprehensive development plan",
-          "Unlimited email support",
-          "Priority scheduling",
-          "Monthly progress reviews",
-        ],
-        featured: false,
+        title: "Growth",
+        description:
+          "We track progress, celebrate successes, and adjust strategies as needed to ensure continued growth.",
       },
     ],
   },
 }
 
-// Booking Page Content
+export const bookingConfig = {
+  availableTimeSlots: ["09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"],
+  daysInAdvance: 30,
+  sessionDuration: 60, // minutes
+  timeZone: "Africa/Cairo",
+}
+
+export const pricingConfig = {
+  defaultPrice: 600,
+  internationalPrice: 30,
+  currency: "EGP",
+  internationalCurrency: "USD",
+  promoCodes: {
+    WELCOME10: 10,
+    SUMMER20: 20,
+    test1234: 100,
+  },
+}
+
 export const bookingContent = {
   hero: {
     title: "Book Your Coaching Session",
-    description: "Schedule your 60-minute online coaching session with Hagar Moharam.",
+    description: "Schedule your 60-minute life coaching session and take the first step towards positive change.",
   },
-
-  // Available time slots for booking
-  timeSlots: ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"],
-
-  // Session price
+  timeSlots: ["09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"],
   sessionPrice: {
-    egypt: "600 EGP",
-    egyptStudent: "400 EGP",
-    international: "$30.00",
+    egypt: "EGP 600",
+    international: "30",
   },
 }
 
-// Contact Page Content
-export const contactContent = {
-  hero: {
-    title: "Get in Touch",
-    description: "Have questions or want to learn more? Reach out and I'll get back to you soon.",
-  },
-}
-
-// Workshops Page Content
 export const workshopsContent = {
   hero: {
-    title: "Workshops",
-    description: "Join our transformative workshops designed to help you grow and develop new skills.",
+    title: "Transformative Workshops",
+    description:
+      "Join our interactive workshops designed to help you develop new skills and insights for personal growth.",
   },
   workshops: [
     {
-      id: "workshop-1",
-      title: "Mindfulness for Everyday Life",
-      date: "June 15, 2024",
-      time: "10:00 AM - 1:00 PM",
-      location: "Online via Zoom",
-      price: "300 EGP",
-      description: "Learn practical mindfulness techniques to reduce stress and increase focus in your daily life.",
-      image: "/placeholder.svg?height=300&width=500",
+      id: 1,
+      title: "Mindfulness & Self-Discovery",
+      description: "A transformative workshop focused on mindfulness practices and self-discovery techniques.",
+      date: "June 15, 2023",
+      time: "10:00 AM - 2:00 PM",
+      location: "Cairo, Egypt",
       spots: 20,
       spotsLeft: 8,
+      price: "EGP 1,500",
+      image: "/placeholder.svg?height=300&width=600",
     },
     {
-      id: "workshop-2",
-      title: "Goal Setting Masterclass",
-      date: "July 10, 2024",
-      time: "6:00 PM - 8:00 PM",
-      location: "Online via Zoom",
-      price: "250 EGP",
-      description: "Discover how to set meaningful goals and create actionable plans to achieve them.",
-      image: "/placeholder.svg?height=300&width=500",
-      spots: 15,
-      spotsLeft: 5,
-    },
-    {
-      id: "workshop-3",
-      title: "Building Healthy Relationships",
-      date: "August 5, 2024",
-      time: "11:00 AM - 2:00 PM",
-      location: "Online via Zoom",
-      price: "350 EGP",
-      description: "Learn effective communication skills and strategies for building healthier relationships.",
-      image: "/placeholder.svg?height=300&width=500",
-      spots: 25,
+      id: 2,
+      title: "Goal Setting & Achievement",
+      description:
+        "Learn effective strategies for setting meaningful goals and developing action plans to achieve them.",
+      date: "July 22, 2023",
+      time: "11:00 AM - 3:00 PM",
+      location: "Online (Zoom)",
+      spots: 30,
       spotsLeft: 15,
+      price: "EGP 1,200",
+      image: "/placeholder.svg?height=300&width=600",
+    },
+    {
+      id: 3,
+      title: "Building Emotional Resilience",
+      description: "Develop skills to navigate life's challenges with greater emotional strength and flexibility.",
+      date: "August 10, 2023",
+      time: "9:30 AM - 1:30 PM",
+      location: "Alexandria, Egypt",
+      spots: 25,
+      spotsLeft: 10,
+      price: "EGP 1,800",
+      image: "/placeholder.svg?height=300&width=600",
     },
   ],
 }
 
-// Arabic Content
-export const arabicContent = {
-  siteConfig: {
-    name: "HM Wellness",
-    coachName: "هاجر محرم",
-    tagline: "حوّل حياتك مع التدريب المهني",
-    description:
-      "اكتشف إمكاناتك الحقيقية مع هاجر محرم، مدربة حياة معتمدة مكرسة لمساعدتك على تحقيق أهدافك والعيش حياة أكثر إشباعًا.",
-  },
-
-  navigation: {
-    home: "الرئيسية",
-    about: "عن هاجر",
-    services: "الخدمات",
-    book: "احجز جلسة",
-    contact: "اتصل بنا",
-    workshops: "ورش العمل",
-  },
-
-  homeContent: {
-    hero: {
-      title: "حوّل حياتك مع التدريب المهني",
-      description:
-        "اكتشف إمكاناتك الحقيقية مع هاجر محرم، مدربة حياة معتمدة مكرسة لمساعدتك على تحقيق أهدافك والعيش حياة أكثر إشباعًا.",
-    },
-    cta: {
-      bookNow: "احجز الآن",
-      learnMore: "اعرف المزيد",
-    },
-  },
-}
-
-// Pricing configuration for payment API
-export const pricingConfig = {
-  currency: "EGP",
-  defaultPrice: 1500,
-  internationalPrice: 100, // USD
-  internationalCurrency: "USD",
-  promoCodes: {
-    test1234: 10, // 10% discount
-  },
-}
-
-// Promo codes configuration
-export const promoCodes = {
-  student: {
-    code: "student",
-    discount: "student",
-    description: "Student Discount",
-  },
-}
-
-// Admin configuration
 export const adminConfig = {
-  email: "alirekaby01@gmail.com",
-  password: "Hagarm@07", // In production, this should be stored securely
-  accessPath: "/admin",
-}
-
-export const bookingConfig = {
-  sessionDuration: 60, // minutes
-  availableTimeSlots: ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"],
-  daysInAdvance: 30, // How many days in advance can be booked
-  timeZone: "Africa/Cairo",
+  email: "admin@example.com",
+  password: "password",
 }

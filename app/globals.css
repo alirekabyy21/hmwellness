@@ -13,24 +13,24 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 275 89% 53%;
+    --primary: 240 30% 53%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 276 84% 36%;
+    --secondary: 240 30% 45%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 270 30% 96.1%;
+    --muted: 240 30% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 270 30% 96.1%;
+    --accent: 240 30% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 270 30% 90%;
-    --input: 270 30% 90%;
-    --ring: 275 89% 53%;
+    --border: 240 30% 90%;
+    --input: 240 30% 90%;
+    --ring: 240 30% 53%;
 
     --radius: 0.5rem;
   }
@@ -45,10 +45,10 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 275 89% 53%;
+    --primary: 240 30% 53%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 276 84% 36%;
+    --secondary: 240 30% 45%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -62,7 +62,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 275 89% 53%;
+    --ring: 240 30% 53%;
   }
 }
 
@@ -100,9 +100,54 @@
   animation: float 6s ease-in-out infinite;
 }
 
-/* Custom gradients */
+/* Gradient text effect */
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#5d6bb0] to-[#8a94d3];
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(93, 107, 176, 0.1), 0 10px 10px -5px rgba(93, 107, 176, 0.04);
+}
+
+/* Button hover effect */
+.btn-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-hover:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.btn-hover:hover:after {
+  animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
 }
 
 /* Add support for RTL (right-to-left) text for Arabic */
@@ -125,7 +170,7 @@
 .prose h2,
 .prose h3,
 .prose h4 {
-  @apply text-primary font-bold;
+  @apply text-[#5d6bb0] font-bold;
 }
 
 .prose h1 {
@@ -153,9 +198,36 @@
 }
 
 .prose a {
-  @apply text-primary hover:underline;
+  @apply text-[#5d6bb0] hover:underline;
 }
 
 .prose blockquote {
-  @apply border-l-4 border-primary/30 pl-4 italic my-4;
+  @apply border-l-4 border-[#5d6bb0]/30 pl-4 italic my-4;
+}
+
+/* Custom background gradients */
+.bg-gradient-soft {
+  @apply bg-gradient-to-r from-[#f8f9ff] to-[#f0f4ff];
+}
+
+.bg-gradient-primary {
+  @apply bg-gradient-to-r from-[#5d6bb0] to-[#8a94d3];
+}
+
+.bg-gradient-card {
+  @apply bg-gradient-to-br from-white to-[#f8f9ff];
+}
+
+/* Icon styles */
+.icon-circle {
+  @apply flex items-center justify-center w-10 h-10 rounded-full bg-[#5d6bb0]/10 text-[#5d6bb0];
+}
+
+.icon-circle-lg {
+  @apply flex items-center justify-center w-14 h-14 rounded-full bg-[#5d6bb0]/10 text-[#5d6bb0];
+}
+
+/* Glass effect */
+.glass-effect {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
 }
