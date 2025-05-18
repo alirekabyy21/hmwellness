@@ -1,12 +1,9 @@
-export const FEATURES = {
-  // Set to false to hide the main site and only show the workshop landing page
-  MAIN_SITE_ENABLED: false,
+import { featureFlags } from "@/app/config"
 
-  // Set to true when the workshop payment page is ready
-  WORKSHOP_PAYMENT_ENABLED: false,
+export function isMainSiteEnabled(): boolean {
+  return featureFlags.mainSiteEnabled
 }
 
-// Helper function to check if a feature is enabled
-export function isFeatureEnabled(featureName: keyof typeof FEATURES): boolean {
-  return FEATURES[featureName] === true
+export function isWorkshopPaymentEnabled(): boolean {
+  return featureFlags.workshopPaymentEnabled
 }

@@ -4,8 +4,9 @@ export const siteConfig = {
   tagline: "Transform Your Life with Professional Coaching", // Main tagline
   description:
     "Discover your true potential with Hagar Moharam at HM Wellness, dedicated to helping you achieve your goals and live a more fulfilling life.",
-  email: "hagar@hmwellness.co", // Your email address
+  email: "hagar@hmwellness.site", // Your email address
   phone: "+20 1090250475", // Your phone number
+  domain: "hmwellness.site", // Website domain
   address: {
     street: "123 Wellness Street",
     city: "Cairo",
@@ -56,17 +57,12 @@ export const emailConfig = {
   host: "smtp.hostinger.com", // SMTP host
   port: 587, // SMTP port
   secure: false, // true for 465, false for other ports
-  user: "hagar@hmwellness.co", // Your email address
-  password: "", // Your email password (fill this in your actual deployment)
+  user: "hagar@hmwellness.site", // Your email address
+  password: process.env.EMAIL_PASSWORD || "", // Your email password (fill this in your actual deployment)
   fromName: "HM Wellness", // The name that appears in the from field
 
-  // Email templates
-  templates: {
-    bookingConfirmation: {
-      subject: "Your Booking with HM Wellness",
-      intro: "Thank you for booking a session with HM Wellness!",
-    },
-  },
+  // Admin email for notifications
+  adminEmail: "hagar@hmwellness.site",
 }
 
 // Google Calendar Integration
@@ -845,6 +841,26 @@ export const colors = {
     medium: "#34495e", // Medium text
     light: "#7f8c8d", // Light text
   },
+}
+
+// Feature Flags
+export const featureFlags = {
+  mainSiteEnabled: false, // Set to false to only show the workshop page
+  workshopPaymentEnabled: false, // Set to true when ready to enable payment
+}
+
+// Workshop Configuration
+export const workshopConfig = {
+  title: "Transformative Coaching Workshop",
+  date: "Next Friday",
+  location: "New Cairo",
+  duration: "3 hours",
+  price: {
+    regular: 600,
+    earlyBird: 450,
+  },
+  currency: "EGP",
+  maxParticipants: 20,
 }
 
 // Translation helper

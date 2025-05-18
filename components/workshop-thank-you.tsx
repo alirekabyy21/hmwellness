@@ -1,83 +1,140 @@
 "use client"
 
-import { CheckCircle, Calendar, Mail } from "lucide-react"
+import { CheckCircle, Calendar, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { siteConfig } from "@/app/config"
 
 interface WorkshopThankYouProps {
   email: string
 }
 
 export function WorkshopThankYou({ email }: WorkshopThankYouProps) {
+  const handleAddToCalendar = () => {
+    // Create Google Calendar link (this is a simplified version)
+    const title = encodeURIComponent("Transformative Coaching Workshop")
+    const details = encodeURIComponent(
+      "Join Hagar Moharam for a transformative coaching workshop. Details will be sent via email.",
+    )
+    const location = encodeURIComponent("New Cairo, Egypt")
+    const dates = encodeURIComponent("20240531T090000/20240531T120000") // Example date - adjust as needed
+
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${dates}`
+    window.open(calendarUrl, "_blank")
+  }
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Transformative Coaching Workshop",
+          text: "I just registered for Hagar Moharam's Transformative Coaching Workshop! Join me for this amazing experience.",
+          url: window.location.href,
+        })
+      } catch (err) {
+        console.error("Error sharing:", err)
+      }
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      alert("Share this page: " + window.location.href)
+    }
+  }
+
   return (
-    <div className="container max-w-3xl px-4 py-16 mx-auto flex flex-col items-center">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center p-2 bg-green-100 rounded-full mb-4">
+    <div className="container max-w-4xl px-4 py-12 mx-auto">
+      <div className="flex flex-col items-center text-center mb-8">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
           <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary mb-4">Registration Successful!</h1>
-        <p className="text-xl text-muted-foreground">
-          Thank you for registering for our Transformative Coaching Workshop.
+        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-4">Registration Confirmed!</h1>
+        <p className="text-xl text-gray-600 max-w-2xl">
+          Thank you for registering for our Transformative Coaching Workshop. We're excited to have you join us!
         </p>
       </div>
 
-      <Card className="w-full bg-white/80 backdrop-blur-sm border-primary/20 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl text-primary">What's Next?</CardTitle>
-          <CardDescription>Here's what you can expect in the coming days</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-start gap-3">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <Mail className="h-5 w-5 text-primary" />
-            </div>
+      <Card className="bg-white/90 backdrop-blur-sm border-primary/20 shadow-lg mb-8">
+        <CardContent className="p-6 md:p-8">
+          <div className="space-y-6">
             <div>
-              <h3 className="font-medium">Confirmation Email</h3>
-              <p className="text-muted-foreground">
-                We've sent a confirmation email to <span className="font-medium">{email}</span>. Please check your inbox
-                (and spam folder, just in case).
+              <h2 className="text-xl font-semibold text-primary mb-2">What's Next?</h2>
+              <p className="text-gray-600">
+                We've sent a confirmation email to <strong>{email}</strong> with all the details. If you don't see it in
+                your inbox, please check your spam folder.
               </p>
             </div>
-          </div>
 
-          <div className="flex items-start gap-3">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <Calendar className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-medium">Workshop Details</h3>
-              <p className="text-muted-foreground">
-                Later this week, you'll receive an email with the complete workshop details, including:
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+              <h3 className="font-medium mb-2">Important Information</h3>
+              <p>
+                We'll send you another email later this week with the exact location, time, and what to bring to the
+                workshop.
               </p>
-              <ul className="mt-2 space-y-1 list-disc list-inside text-muted-foreground">
-                <li>Exact location in New Cairo</li>
-                <li>Workshop start and end time</li>
-                <li>What to bring with you</li>
-                <li>Pre-workshop preparation (if any)</li>
-              </ul>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-primary mb-2">Have Questions?</h2>
+              <p className="text-gray-600 mb-4">
+                If you have any questions before the workshop, please don't hesitate to contact us:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a
+                  href={`https://wa.me/${siteConfig.phone.replace(/\+|\s/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-green-600"
+                  >
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <span>WhatsApp: {siteConfig.phone}</span>
+                </a>
+                <a
+                  href={`mailto:${siteConfig.email}`}
+                  className="flex items-center gap-2 p-3 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                  >
+                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                  </svg>
+                  <span>Email: {siteConfig.email}</span>
+                </a>
+              </div>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <p className="text-sm text-muted-foreground">
-            If you have any questions before the workshop, please contact us at{" "}
-            <a href="mailto:hagar@hmwellness.co" className="text-primary hover:underline">
-              hagar@hmwellness.co
-            </a>{" "}
-            or WhatsApp at +20 1090250475.
-          </p>
-          <Button
-            variant="outline"
-            className="w-full border-primary/20 text-primary hover:bg-primary/10"
-            onClick={() => (window.location.href = "https://instagram.com/hmwellness")}
-          >
-            Follow Us on Instagram for Updates
-          </Button>
-        </CardFooter>
       </Card>
 
-      <div className="mt-16 text-center">
-        <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} HM Wellness. All rights reserved.</p>
+      <div className="flex flex-col md:flex-row gap-4 justify-center">
+        <Button onClick={handleAddToCalendar} variant="outline" className="border-primary/20 hover:bg-primary/5">
+          <Calendar className="mr-2 h-4 w-4" />
+          Add to Calendar
+        </Button>
+        <Button onClick={handleShare} variant="outline" className="border-primary/20 hover:bg-primary/5">
+          <Share2 className="mr-2 h-4 w-4" />
+          Share with Friends
+        </Button>
       </div>
     </div>
   )
