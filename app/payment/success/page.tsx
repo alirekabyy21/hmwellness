@@ -1,14 +1,7 @@
 import Link from "next/link"
 import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHeader } from "@/components/layout/page-header"
@@ -19,8 +12,8 @@ export default function PaymentSuccessPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHeader
-          title="Payment Successful"
-          description="Thank you for your payment"
+          title={{ en: "Payment Successful", ar: "تمت عملية الدفع بنجاح" }}
+          description={{ en: "Thank you for your payment", ar: "شكرا لدفعك" }}
         />
 
         <section className="w-full py-12 md:py-24 lg:py-32">
@@ -30,28 +23,18 @@ export default function PaymentSuccessPage() {
                 <div className="mx-auto rounded-full bg-green-100 p-3 mb-4">
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
-                <CardTitle className="text-center text-2xl text-primary">
-                  Payment Successful!
-                </CardTitle>
-                <CardDescription className="text-center text-lg">
-                  Your booking has been confirmed.
-                </CardDescription>
+                <CardTitle className="text-center text-2xl text-primary">Payment Successful!</CardTitle>
+                <CardDescription className="text-center text-lg">Your booking has been confirmed.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-center">
-                <p>
-                  We've sent a confirmation email with all the details of your
-                  booking.
-                </p>
+                <p>We've sent a confirmation email with all the details of your booking.</p>
                 <div className="rounded-lg border p-4 bg-white">
                   <h3 className="font-medium text-primary">What's Next?</h3>
                   <ol className="mt-3 space-y-2 text-left list-decimal list-inside">
                     <li>Check your email for booking confirmation</li>
                     <li>Add the session to your calendar</li>
                     <li>Prepare for your coaching session</li>
-                    <li>
-                      Join the Zoom meeting link sent to your email at the
-                      scheduled time
-                    </li>
+                    <li>Join the Zoom meeting link sent to your email at the scheduled time</li>
                   </ol>
                 </div>
               </CardContent>

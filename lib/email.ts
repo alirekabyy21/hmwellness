@@ -104,7 +104,7 @@ export function generateBookingConfirmationEmail(booking: any): string {
             <p>If you have any questions or need assistance, please don't hesitate to contact us at:</p>
             <ul>
               <li>WhatsApp: +20 1090250475</li>
-              <li>Email: hagar@hmwellness.site</li>
+              <li>Email: hagar@hmwellness.co</li>
             </ul>
             
             <p>Best regards,<br>Hagar Moharam<br>HM Wellness</p>

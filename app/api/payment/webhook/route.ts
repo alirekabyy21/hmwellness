@@ -1,58 +1,29 @@
 import { type NextRequest, NextResponse } from "next/server"
-import crypto from "crypto"
+import { validateWebhook } from "@/lib/payment"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    console.log("Received Kashier webhook:", JSON.stringify(body, null, 2))
+    const signature = request.headers.get("x-kashier-signature") || ""
 
-    // Get Kashier credentials
-    const merchantId = process.env.KASHIER_MERCHANT_ID
-    const secretKey = process.env.KASHIER_SECRET_KEY
-
-    if (!merchantId || !secretKey) {
-      console.error("Missing Kashier credentials")
-      return NextResponse.json({ success: false, error: "Missing Kashier credentials" }, { status: 500 })
+    // Validate webhook signature
+    const isValid = validateWebhook(body, signature)
+    if (!isValid) {
+      return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 })
     }
 
-    // Verify the signature
-    const signature = request.headers.get("x-kashier-signature")
-    if (!signature) {
-      console.error("Missing Kashier signature")
-      return NextResponse.json({ success: false, error: "Missing signature" }, { status: 400 })
-    }
+    // Process the payment notification
+    const { orderId, status, amount, currency } = body
 
-    // Create the signature string
-    const signatureString = JSON.stringify(body)
-    const expectedSignature = crypto.createHmac("sha256", secretKey).update(signatureString).digest("hex")
+    // Here you would update your database with the payment status
+    // For example:
+    // await updatePaymentStatus(orderId, status);
 
-    if (signature !== expectedSignature) {
-      console.error("Invalid signature")
-      return NextResponse.json({ success: false, error: "Invalid signature" }, { status: 400 })
-    }
-
-    // Process the webhook
-    const { event, data } = body
-
-    if (event === "payment.succeeded") {
-      // Payment succeeded
-      console.log("Payment succeeded:", data)
-
-      // Here you would update your database, send confirmation emails, etc.
-      // For now, we'll just log the data
-    } else if (event === "payment.failed") {
-      // Payment failed
-      console.log("Payment failed:", data)
-
-      // Here you would update your database, send notification emails, etc.
-    }
+    console.log(`Payment ${status} for order ${orderId}: ${amount} ${currency}`)
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error processing Kashier webhook:", error)
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+    console.error("Webhook processing error:", error)
+    return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 })
   }
 }
