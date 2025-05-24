@@ -1,19 +1,22 @@
 "use client"
 
-import React, { useState } from "react"
+import type React from "react"
+
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, Clock, MapPin, Users, Phone, Mail } from "lucide-react"
+import { CheckCircle, Clock, MapPin, Users, Phone, Mail, PhoneIcon as WhatsApp } from "lucide-react"
 
 export default function WorkshopPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    whatsapp: "",
     expectations: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,14 +33,6 @@ export default function WorkshopPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Frontend validation for mandatory fields
-    if (!formData.name || !formData.email || !formData.phone) {
-      setSubmitStatus("error")
-      setMessage("Please fill in all required fields.")
-      return
-    }
-
     setIsSubmitting(true)
     setSubmitStatus("idle")
 
@@ -55,7 +50,7 @@ export default function WorkshopPage() {
       if (result.success) {
         setSubmitStatus("success")
         setMessage("Registration successful! Check your email for confirmation.")
-        setFormData({ name: "", email: "", phone: "", expectations: "" })
+        setFormData({ name: "", email: "", phone: "", whatsapp: "", expectations: "" })
       } else {
         setSubmitStatus("error")
         setMessage(result.message || "Registration failed. Please try again.")
@@ -72,91 +67,110 @@ export default function WorkshopPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-purple-900">HM Wellness</h1>
-            <p className="text-sm text-gray-600">Transform Your Life</p>
-          </div>
-          <div className="flex items-center space-x-6 text-sm text-gray-600">
-            <div className="flex items-center space-x-1">
-              <Phone className="h-4 w-4" />
-              <span>+20 1090250475</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-purple-900">HM Wellness</h1>
+              <p className="text-sm text-gray-600">Transform Your Life</p>
             </div>
-            <div className="flex items-center space-x-1">
-              <Mail className="h-4 w-4" />
-              <span>hagar@hmwellness.site</span>
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <div className="flex items-center">
+                <Phone className="h-4 w-4 mr-1" />
+                <span>+20 1090250475</span>
+              </div>
+              <div className="flex items-center">
+                <Mail className="h-4 w-4 mr-1" />
+                <span>hagar@hmwellness.site</span>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h2 className="text-4xl font-extrabold text-gray-900 mb-10 text-center">
-          Transformative Coaching Workshop
-        </h2>
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Workshop Info - Show first on mobile */}
+          <div className="space-y-8 order-1 lg:order-1">
+            <div>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Transformative Coaching Workshop</h2>
+              <p className="text-xl text-gray-600 mb-6">
+                Join us for an intensive 2-hour workshop designed to help you discover your potential and create lasting
+                change in your life.
+              </p>
+            </div>
 
-        <div className="flex flex-col space-y-10 lg:grid lg:grid-cols-2 lg:gap-12 lg:space-y-0">
-          {/* Left column: Details + What you'll learn */}
-          <section className="order-1 lg:order-none space-y-8">
-            {/* Workshop Description */}
-            <p className="text-xl text-gray-700 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Join us for an intensive 3-hour workshop designed to help you discover your potential and create lasting
-              change in your life.
-            </p>
-
-            {/* Workshop Details Card */}
-            <Card className="max-w-xl mx-auto lg:mx-0">
+            {/* Workshop Details */}
+            <Card>
               <CardHeader>
                 <CardTitle className="text-purple-900">Workshop Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-5">
+              <CardContent className="space-y-4">
                 <div className="flex items-center">
-                  <Clock className="h-6 w-6 text-purple-600 mr-4" />
+                  <Clock className="h-5 w-5 text-purple-600 mr-3" />
                   <div>
-                    <p className="font-semibold text-gray-900">Next Friday, 7:00 PM – 9:00 PM</p>
+                    <p className="font-medium">Friday, May 30th, 2024</p>
+                    <p className="text-sm text-gray-600">7:00 PM - 9:00 PM (2 hours)</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <MapPin className="h-6 w-6 text-purple-600 mr-4" />
+                  <MapPin className="h-5 w-5 text-purple-600 mr-3" />
                   <div>
-                    <p className="font-semibold text-gray-900">Espaces, New Cairo</p>
-                    <a
-                      href="https://goo.gl/maps/hN1FpBq1E1a5bh6Y9"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-purple-700 underline hover:text-purple-900"
-                    >
-                      View on Google Maps
-                    </a>
+                    <p className="font-medium">Espaces - New Cairo</p>
+                    <p className="text-sm text-gray-600">5th Settlement, New Cairo</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <Users className="h-6 w-6 text-purple-600 mr-4" />
+                  <Users className="h-5 w-5 text-purple-600 mr-3" />
                   <div>
-                    <p className="font-semibold text-gray-900">Limited to 20 participants</p>
+                    <p className="font-medium">Limited to 40 participants</p>
                     <p className="text-sm text-gray-600">Small group for personalized attention</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* What You'll Learn Card */}
-            <Card className="max-w-xl mx-auto lg:mx-0">
+            {/* Location Map */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-purple-900">Location</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="font-medium">Espaces - 5th Settlement</p>
+                    <p className="text-sm text-gray-600">New Cairo, Egypt</p>
+                  </div>
+                  <div className="w-full h-64 rounded-lg overflow-hidden">
+                    <iframe
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3455.4971563394943!2d31.440047800000002!3d29.993878000000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14583d3ff4fccb3b%3A0x51f79c978c375f9d!2sEspaces%20-%205th%20Settlement!5e0!3m2!1sen!2seg!4v1748084300431!5m2!1sen!2seg"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen={true}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* What You'll Learn */}
+            <Card>
               <CardHeader>
                 <CardTitle className="text-purple-900">What You'll Learn</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-3 list-disc list-inside text-gray-800">
+                <ul className="space-y-3">
                   {[
                     "Identify and overcome limiting beliefs",
                     "Set clear, achievable goals",
                     "Develop a growth mindset",
                     "Build confidence and self-awareness",
                     "Create an action plan for transformation",
-                  ].map((item, idx) => (
-                    <li key={idx} className="flex items-start space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                  ].map((item, index) => (
+                    <li key={index} className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -164,23 +178,24 @@ export default function WorkshopPage() {
               </CardContent>
             </Card>
 
-            {/* Pricing Card */}
-            <Card className="max-w-xl mx-auto lg:mx-0">
+            {/* Pricing */}
+            <Card>
               <CardHeader>
                 <CardTitle className="text-purple-900">Investment</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <div className="text-4xl font-extrabold text-purple-900 mb-2">600 EGP</div>
-                <p className="text-lg text-gray-700 mb-3 font-semibold">Early bird special: 450 EGP</p>
-                <p className="text-sm text-gray-500 max-w-xs mx-auto">
-                  Students get additional discount with valid ID. Contact us on WhatsApp for promo code.
-                </p>
+              <CardContent>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-purple-900 mb-2">500 EGP</div>
+                  <p className="text-sm text-gray-500">
+                    Students get additional discount with valid ID. Contact us on WhatsApp for promo code.
+                  </p>
+                </div>
               </CardContent>
             </Card>
-          </section>
+          </div>
 
-          {/* Right column: Registration Form */}
-          <section className="order-2 lg:order-none lg:sticky lg:top-8 max-w-xl mx-auto lg:mx-0">
+          {/* Registration Form - Show second on mobile */}
+          <div className="lg:sticky lg:top-8 order-2 lg:order-2">
             <Card>
               <CardHeader>
                 <CardTitle className="text-purple-900">Register Now</CardTitle>
@@ -217,7 +232,7 @@ export default function WorkshopPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Label htmlFor="phone">Phone Number (Primary) *</Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -225,9 +240,25 @@ export default function WorkshopPage() {
                       required
                       value={formData.phone}
                       onChange={handleInputChange}
-                      placeholder="Enter your phone number"
+                      placeholder="Enter your primary phone number"
                       className="mt-1"
                     />
+                    <p className="text-xs text-gray-500 mt-1">This number will be used for calls</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="whatsapp">WhatsApp Number *</Label>
+                    <Input
+                      id="whatsapp"
+                      name="whatsapp"
+                      type="tel"
+                      required
+                      value={formData.whatsapp}
+                      onChange={handleInputChange}
+                      placeholder="Enter your WhatsApp number"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Must have WhatsApp for confirmation</p>
                   </div>
 
                   <div>
@@ -244,8 +275,8 @@ export default function WorkshopPage() {
                   </div>
 
                   {submitStatus === "success" && (
-                    <Alert className="border-green-200 bg-green-50 flex items-center space-x-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    <Alert className="border-green-200 bg-green-50">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
                       <AlertDescription className="text-green-800">{message}</AlertDescription>
                     </Alert>
                   )}
@@ -260,7 +291,7 @@ export default function WorkshopPage() {
                     {isSubmitting ? "Registering..." : "Register for Workshop"}
                   </Button>
 
-                  <p className="text-xs text-gray-500 text-center mt-2">
+                  <p className="text-xs text-gray-500 text-center">
                     By registering, you'll receive a confirmation email with workshop details.
                   </p>
                 </form>
@@ -268,22 +299,22 @@ export default function WorkshopPage() {
             </Card>
 
             {/* Contact Info */}
-            <Card className="mt-6 max-w-xl mx-auto lg:mx-0">
+            <Card className="mt-6">
               <CardHeader>
                 <CardTitle className="text-purple-900">Questions?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Phone className="h-5 w-5 text-purple-600" />
+                <div className="flex items-center">
+                  <WhatsApp className="h-4 w-4 text-purple-600 mr-3" />
                   <span className="text-sm">WhatsApp: +20 1090250475</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-5 w-5 text-purple-600" />
+                <div className="flex items-center">
+                  <Mail className="h-4 w-4 text-purple-600 mr-3" />
                   <span className="text-sm">hagar@hmwellness.site</span>
                 </div>
               </CardContent>
             </Card>
-          </section>
+          </div>
         </div>
       </main>
 
