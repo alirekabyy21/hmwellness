@@ -50,19 +50,35 @@ export const pricingConfig = {
   },
 }
 
-// Email Settings
+// Email Settings - Now with Gmail fallback
 export const emailConfig = {
-  // Email service details
-  service: "hostinger", // Email service provider
-  host: "smtp.hostinger.com", // SMTP host
-  port: 587, // SMTP port
-  secure: false, // true for 465, false for other ports
-  user: "hagar@hmwellness.site", // Your email address
-  password: process.env.EMAIL_PASSWORD || "", // Your email password (fill this in your actual deployment)
-  fromName: "HM Wellness", // The name that appears in the from field
+  // Primary email service (Hostinger)
+  primary: {
+    service: "hostinger",
+    host: "smtp.hostinger.com",
+    port: 587,
+    secure: false,
+    user: "hagar@hmwellness.site",
+    password: process.env.EMAIL_PASSWORD || "",
+    fromName: "HM Wellness",
+  },
+
+  // Fallback email service (Gmail)
+  fallback: {
+    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    user: "hagarmoharam7@gmail.com",
+    password: process.env.GMAIL_APP_PASSWORD || "", // Gmail App Password
+    fromName: "HM Wellness",
+  },
 
   // Admin email for notifications
   adminEmail: "hagar@hmwellness.site",
+
+  // Which service to use: 'primary', 'fallback', or 'auto' (tries primary first, then fallback)
+  useService: "auto",
 }
 
 // Google Calendar Integration
@@ -825,6 +841,7 @@ export const legalContent = {
       },
     ],
   },
+  email: "hagar@hmwellness.site",
 }
 
 // Colors - Edit these to change your website's color scheme
