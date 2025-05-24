@@ -1,42 +1,91 @@
 import { NextResponse } from "next/server"
-import { sendEmail } from "@/lib/email"
-import { emailConfig } from "@/app/config"
+import nodemailer from "nodemailer"
+
+const EMAIL_CONFIG = {
+  host: "smtp.hostinger.com",
+  port: 465,
+  secure: true,
+  user: "hagar@hmwellness.site",
+  password: process.env.EMAIL_PASSWORD || "",
+  fromName: "HM Wellness",
+}
 
 export async function GET() {
   try {
-    // Send a test email
-    const result = await sendEmail({
-      to: emailConfig.adminEmail,
-      subject: "Test Email from HM Wellness",
+    console.log("🧪 Testing email configuration...")
+
+    if (!EMAIL_CONFIG.password) {
+      return NextResponse.json({
+        success: false,
+        message: "EMAIL_PASSWORD environment variable not set",
+        config: {
+          host: EMAIL_CONFIG.host,
+          port: EMAIL_CONFIG.port,
+          user: EMAIL_CONFIG.user,
+          passwordSet: false,
+        },
+      })
+    }
+
+    const transporter = nodemailer.createTransporter({
+      host: EMAIL_CONFIG.host,
+      port: EMAIL_CONFIG.port,
+      secure: EMAIL_CONFIG.secure,
+      auth: {
+        user: EMAIL_CONFIG.user,
+        pass: EMAIL_CONFIG.password,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    })
+
+    // Test connection
+    await transporter.verify()
+    console.log("✅ SMTP connection verified")
+
+    // Send test email
+    const info = await transporter.sendMail({
+      from: `"${EMAIL_CONFIG.fromName}" <${EMAIL_CONFIG.user}>`,
+      to: EMAIL_CONFIG.user,
+      subject: "Test Email - HM Wellness System",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <h1 style="color: #8e44ad;">Email Test Successful!</h1>
-          <p>This is a test email to verify that your email configuration is working correctly.</p>
-          <p>If you're seeing this, it means your Hostinger email is properly configured.</p>
-          <p>Email settings used:</p>
-          <ul>
-            <li>Host: ${emailConfig.host}</li>
-            <li>Port: ${emailConfig.port}</li>
-            <li>Secure: ${emailConfig.secure}</li>
-            <li>User: ${emailConfig.user}</li>
-          </ul>
-          <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
-            Sent from HM Wellness Website
-          </p>
-        </div>
+        <h2>✅ Email System Test Successful!</h2>
+        <p>This is a test email from your HM Wellness workshop registration system.</p>
+        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+        <p><strong>Configuration:</strong></p>
+        <ul>
+          <li>Host: ${EMAIL_CONFIG.host}</li>
+          <li>Port: ${EMAIL_CONFIG.port}</li>
+          <li>Secure: ${EMAIL_CONFIG.secure}</li>
+          <li>From: ${EMAIL_CONFIG.user}</li>
+        </ul>
+        <p>Your email system is working correctly! 🎉</p>
       `,
     })
 
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error("Test email error:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to send test email",
-        error: error instanceof Error ? error.message : "Unknown error",
+    return NextResponse.json({
+      success: true,
+      message: "Test email sent successfully!",
+      messageId: info.messageId,
+      config: {
+        host: EMAIL_CONFIG.host,
+        port: EMAIL_CONFIG.port,
+        user: EMAIL_CONFIG.user,
+        passwordSet: true,
       },
-      { status: 500 },
-    )
+    })
+  } catch (error) {
+    console.error("❌ Email test failed:", error)
+    return NextResponse.json({
+      success: false,
+      message: `Email test failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      config: {
+        host: EMAIL_CONFIG.host,
+        port: EMAIL_CONFIG.port,
+        user: EMAIL_CONFIG.user,
+        passwordSet: !!EMAIL_CONFIG.password,
+      },
+    })
   }
 }

@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
-import { emailConfig } from "@/app/config";
+import { NextResponse } from "next/server"
+import nodemailer from "nodemailer"
+import { emailConfig } from "@/app/config"
 
 export async function GET() {
   const debugInfo = {
@@ -15,9 +15,9 @@ export async function GET() {
     },
     tests: [],
     errors: [],
-  };
+  }
 
-  // Test 1: Basic configuration presence check
+  // Test 1: Basic configuration check
   debugInfo.tests.push({
     name: "Configuration Check",
     status: emailConfig.user && emailConfig.password ? "PASS" : "FAIL",
@@ -26,46 +26,39 @@ export async function GET() {
       hasPassword: !!emailConfig.password,
       envPasswordSet: !!process.env.EMAIL_PASSWORD,
     },
-  });
+  })
 
-  if (!emailConfig.user || !emailConfig.password) {
-    debugInfo.errors.push({
-      error: "Email configuration is incomplete. Missing user or password.",
-    });
-    return NextResponse.json(debugInfo, { status: 400 });
-  }
-
-  // Hostinger SMTP configuration variants to test
+  // Test 2: Try Hostinger SMTP settings
   const hostingerConfigs = [
     {
-      name: "Hostinger SSL (Port 465)",
-      host: "smtp.hostinger.com",
-      port: 465,
-      secure: true, // SSL/TLS
-    },
-    {
-      name: "Hostinger TLS (Port 587)",
+      name: "Hostinger Primary",
       host: "smtp.hostinger.com",
       port: 587,
-      secure: false, // STARTTLS
+      secure: false,
     },
     {
-      name: "Hostinger Alternative SSL",
-      host: "mail.hostinger.com",
-      port: 465,
-      secure: true,
-    },
-    {
-      name: "Hostinger Alternative TLS",
+      name: "Hostinger Alternative 1",
       host: "mail.hostinger.com",
       port: 587,
       secure: false,
     },
-  ];
+    {
+      name: "Hostinger Alternative 2",
+      host: "smtp.hostinger.com",
+      port: 465,
+      secure: true,
+    },
+    {
+      name: "Hostinger Alternative 3",
+      host: "mail.hostinger.com",
+      port: 465,
+      secure: true,
+    },
+  ]
 
   for (const config of hostingerConfigs) {
     try {
-      const transporter = nodemailer.createTransport({
+      const transporter = nodemailer.createTransporter({
         host: config.host,
         port: config.port,
         secure: config.secure,
@@ -76,14 +69,11 @@ export async function GET() {
         connectionTimeout: 10000,
         greetingTimeout: 5000,
         socketTimeout: 10000,
-        tls: {
-          rejectUnauthorized: false, // Set to true in production if you have valid certs
-        },
-      });
+      })
 
-      const startTime = Date.now();
-      await transporter.verify();
-      const endTime = Date.now();
+      const startTime = Date.now()
+      await transporter.verify()
+      const endTime = Date.now()
 
       debugInfo.tests.push({
         name: config.name,
@@ -92,20 +82,29 @@ export async function GET() {
           host: config.host,
           port: config.port,
           secure: config.secure,
-          responseTimeMs: endTime - startTime,
+          responseTime: `${endTime - startTime}ms`,
         },
-      });
+      })
 
-      // Optionally, send a test email here and log success/failure:
-      // Uncomment if you want to test sending as well:
-      /*
+      // If this config works, try sending a test email
       try {
         const info = await transporter.sendMail({
           from: `"${emailConfig.fromName}" <${emailConfig.user}>`,
           to: emailConfig.adminEmail,
-          subject: `SMTP Test Email - ${config.name}`,
-          html: `<p>This is a test email sent using configuration: ${config.name}</p>`,
-        });
+          subject: `Test Email - ${config.name}`,
+          html: `
+            <h2>Email Test Successful!</h2>
+            <p>This email was sent using: ${config.name}</p>
+            <p>Configuration:</p>
+            <ul>
+              <li>Host: ${config.host}</li>
+              <li>Port: ${config.port}</li>
+              <li>Secure: ${config.secure}</li>
+            </ul>
+            <p>Sent at: ${new Date().toISOString()}</p>
+          `,
+        })
+
         debugInfo.tests.push({
           name: `${config.name} - Send Test`,
           status: "PASS",
@@ -113,8 +112,9 @@ export async function GET() {
             messageId: info.messageId,
             response: info.response,
           },
-        });
-        break; // Stop after first successful config
+        })
+
+        break // Stop testing if we found a working configuration
       } catch (sendError) {
         debugInfo.tests.push({
           name: `${config.name} - Send Test`,
@@ -123,26 +123,27 @@ export async function GET() {
             error: sendError.message,
             code: sendError.code,
           },
-        });
+        })
       }
-      */
-
-    } catch (error: any) {
+    } catch (error) {
       debugInfo.tests.push({
         name: config.name,
         status: "FAIL",
         details: {
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
           error: error.message,
           code: error.code,
         },
-      });
+      })
       debugInfo.errors.push({
         config: config.name,
         error: error.message,
         code: error.code,
-      });
+      })
     }
   }
 
-  return NextResponse.json(debugInfo, { status: 200 });
+  return NextResponse.json(debugInfo, { status: 200 })
 }
