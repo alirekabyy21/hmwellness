@@ -9,179 +9,70 @@ export interface EmailData {
 
 export async function sendEmail(emailData: EmailData): Promise<{ success: boolean; message: string }> {
   try {
-    // Determine which email service to use
-    const useService = emailConfig.useService
-    let currentConfig = emailConfig.primary
-    let serviceName = "Primary (Hostinger)"
-
-    if (useService === "fallback") {
-      currentConfig = emailConfig.fallback
-      serviceName = "Fallback (Gmail)"
-    }
-
-    console.log(`Attempting to send email using ${serviceName}`)
+    console.log(`Attempting to send email using Hostinger SMTP`)
+    console.log(`From: ${emailConfig.user}`)
     console.log(`To: ${emailData.to}`)
     console.log(`Subject: ${emailData.subject}`)
 
     // Check if email configuration is set up
-    if (!currentConfig.user || !currentConfig.password) {
-      console.log(`${serviceName} configuration is incomplete. Missing username or password.`)
-
-      // If primary fails and we're in auto mode, try fallback
-      if (useService === "auto" && currentConfig === emailConfig.primary) {
-        console.log("Trying fallback Gmail service...")
-        return await sendEmailWithConfig(emailData, emailConfig.fallback, "Fallback (Gmail)")
-      }
-
+    if (!emailConfig.user || !emailConfig.password) {
+      console.log("Hostinger email configuration is incomplete. Missing username or password.")
       return {
         success: false,
-        message: `${serviceName} configuration is incomplete. Please set up your email credentials.`,
+        message: "Email configuration is incomplete. Please set up your Hostinger email credentials.",
       }
     }
 
-    return await sendEmailWithConfig(emailData, currentConfig, serviceName)
-  } catch (error) {
-    console.error("Error in sendEmail:", error)
-    return {
-      success: false,
-      message: `Failed to send email: ${error instanceof Error ? error.message : "Unknown error"}`,
-    }
-  }
-}
-
-async function sendEmailWithConfig(
-  emailData: EmailData,
-  config: any,
-  serviceName: string,
-): Promise<{ success: boolean; message: string }> {
-  try {
-    console.log(`Sending email with ${serviceName} configuration:`)
-    console.log(`Host: ${config.host}:${config.port}`)
-    console.log(`User: ${config.user}`)
-    console.log(`Secure: ${config.secure}`)
-
-    // For Hostinger, try multiple configurations
-    if (config.host.includes("hostinger")) {
-      const hostingerConfigs = [
-        {
-          ...config,
-          host: "smtp.hostinger.com",
-          port: 465,
-          secure: false,
-        },
-        {
-          ...config,
-          host: "mail.hostinger.com",
-          port: 465,
-          secure: false,
-        },
-        {
-          ...config,
-          host: "smtp.hostinger.com",
-          port: 465,
-          secure: true,
-        },
-        {
-          ...config,
-          host: "mail.hostinger.com",
-          port: 465,
-          secure: true,
-        },
-      ]
-
-      for (const hostingerConfig of hostingerConfigs) {
-        try {
-          console.log(
-            `Trying Hostinger config: ${hostingerConfig.host}:${hostingerConfig.port}, secure: ${hostingerConfig.secure}`,
-          )
-
-          const transporter = nodemailer.createTransporter({
-            host: hostingerConfig.host,
-            port: hostingerConfig.port,
-            secure: hostingerConfig.secure,
-            auth: {
-              user: hostingerConfig.user,
-              pass: hostingerConfig.password,
-            },
-            tls: {
-              rejectUnauthorized: false,
-            },
-            connectionTimeout: 15000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000,
-          })
-
-          // Test connection
-          await transporter.verify()
-          console.log(`Hostinger SMTP connection verified: ${hostingerConfig.host}:${hostingerConfig.port}`)
-
-          // Send email
-          const info = await transporter.sendMail({
-            from: `"${hostingerConfig.fromName}" <${hostingerConfig.user}>`,
-            to: emailData.to,
-            subject: emailData.subject,
-            html: emailData.html,
-          })
-
-          console.log(`Email sent successfully with Hostinger:`, info.messageId)
-          return {
-            success: true,
-            message: `Email sent successfully using Hostinger (${hostingerConfig.host}:${hostingerConfig.port})`,
-          }
-        } catch (configError) {
-          console.log(`Hostinger config ${hostingerConfig.host}:${hostingerConfig.port} failed:`, configError.message)
-          continue
-        }
-      }
-
-      // If all Hostinger configs failed
-      return {
-        success: false,
-        message: `All Hostinger SMTP configurations failed. Please check your email password and account settings.`,
-      }
-    }
-
-    // For non-Hostinger services (Gmail, etc.)
+    // Create transporter with Hostinger settings
     const transporter = nodemailer.createTransporter({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
+      host: emailConfig.host,
+      port: emailConfig.port,
+      secure: emailConfig.secure, // true for port 465
       auth: {
-        user: config.user,
-        pass: config.password,
+        user: emailConfig.user,
+        pass: emailConfig.password,
       },
       tls: {
         rejectUnauthorized: false,
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 5000,
-      socketTimeout: 10000,
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     })
 
+    console.log(`Using Hostinger SMTP: ${emailConfig.host}:${emailConfig.port}, secure: ${emailConfig.secure}`)
+
     // Verify connection
-    await transporter.verify()
-    console.log(`${serviceName} SMTP connection verified successfully`)
+    try {
+      await transporter.verify()
+      console.log("Hostinger SMTP connection verified successfully")
+    } catch (verifyError) {
+      console.error("Hostinger SMTP verification failed:", verifyError)
+      return {
+        success: false,
+        message: `Hostinger SMTP verification failed: ${verifyError instanceof Error ? verifyError.message : "Unknown error"}`,
+      }
+    }
 
     // Send the email
     const info = await transporter.sendMail({
-      from: `"${config.fromName}" <${config.user}>`,
+      from: `"${emailConfig.fromName}" <${emailConfig.user}>`,
       to: emailData.to,
       subject: emailData.subject,
       html: emailData.html,
     })
 
-    console.log(`Email sent successfully with ${serviceName}:`, info.messageId)
+    console.log("Email sent successfully with Hostinger:", info.messageId)
 
     return {
       success: true,
-      message: `Email sent successfully using ${serviceName}`,
+      message: "Email sent successfully using Hostinger",
     }
   } catch (error) {
-    console.error(`Error sending email with ${serviceName}:`, error)
-
+    console.error("Error sending email with Hostinger:", error)
     return {
       success: false,
-      message: `Failed to send email with ${serviceName}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      message: `Failed to send email: ${error instanceof Error ? error.message : "Unknown error"}`,
     }
   }
 }

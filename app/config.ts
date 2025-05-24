@@ -50,35 +50,18 @@ export const pricingConfig = {
   },
 }
 
-// Email Settings - Updated for Hostinger
+// Email Settings - Hostinger Only
 export const emailConfig = {
-  // Primary email service (Hostinger)
-  primary: {
-    service: "hostinger",
-    host: "smtp.hostinger.com",
-    port: 465,
-    secure: false,
-    user: "hagar@hmwellness.site",
-    password: process.env.EMAIL_PASSWORD || "",
-    fromName: "HM Wellness",
-  },
+  // Hostinger email configuration
+  host: "smtp.hostinger.com",
+  port: 465,
+  secure: true, // Use SSL for port 465
+  user: "hagar@hmwellness.site",
+  password: process.env.EMAIL_PASSWORD || "",
+  fromName: "HM Wellness",
 
-  // Fallback email service (Gmail)
-  fallback: {
-    service: "gmail",
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: false,
-    user: "hagarmoharam7@gmail.com",
-    password: process.env.GMAIL_APP_PASSWORD || "",
-    fromName: "HM Wellness",
-  },
-
-  // Admin email for notifications
+  // Admin email for notifications (same as sender)
   adminEmail: "hagar@hmwellness.site",
-
-  // Which service to use: 'primary' to force Hostinger
-  useService: "primary",
 }
 
 // Google Calendar Integration

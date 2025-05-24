@@ -33,13 +33,13 @@ export async function GET() {
     {
       name: "Hostinger Primary",
       host: "smtp.hostinger.com",
-      port: 465,
+      port: 587,
       secure: false,
     },
     {
       name: "Hostinger Alternative 1",
       host: "mail.hostinger.com",
-      port: 465,
+      port: 587,
       secure: false,
     },
     {
