@@ -181,7 +181,7 @@ export default function WorkshopPage() {
             {/* Pricing */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-purple-900">Investment</CardTitle>
+                <CardTitle className="text-purple-900">Price</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center">
