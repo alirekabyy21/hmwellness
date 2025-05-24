@@ -50,7 +50,7 @@ export const pricingConfig = {
   },
 }
 
-// Email Settings - Now with Gmail fallback
+// Email Settings - Updated for Hostinger
 export const emailConfig = {
   // Primary email service (Hostinger)
   primary: {
@@ -70,15 +70,15 @@ export const emailConfig = {
     port: 587,
     secure: false,
     user: "hagarmoharam7@gmail.com",
-    password: process.env.GMAIL_APP_PASSWORD || "", // Gmail App Password
+    password: process.env.GMAIL_APP_PASSWORD || "",
     fromName: "HM Wellness",
   },
 
   // Admin email for notifications
   adminEmail: "hagar@hmwellness.site",
 
-  // Which service to use: 'primary', 'fallback', or 'auto' (tries primary first, then fallback)
-  useService: "auto",
+  // Which service to use: 'primary' to force Hostinger
+  useService: "primary",
 }
 
 // Google Calendar Integration

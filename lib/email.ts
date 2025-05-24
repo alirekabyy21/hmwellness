@@ -60,7 +60,88 @@ async function sendEmailWithConfig(
     console.log(`User: ${config.user}`)
     console.log(`Secure: ${config.secure}`)
 
-    // Create a transporter
+    // For Hostinger, try multiple configurations
+    if (config.host.includes("hostinger")) {
+      const hostingerConfigs = [
+        {
+          ...config,
+          host: "smtp.hostinger.com",
+          port: 587,
+          secure: false,
+        },
+        {
+          ...config,
+          host: "mail.hostinger.com",
+          port: 587,
+          secure: false,
+        },
+        {
+          ...config,
+          host: "smtp.hostinger.com",
+          port: 465,
+          secure: true,
+        },
+        {
+          ...config,
+          host: "mail.hostinger.com",
+          port: 465,
+          secure: true,
+        },
+      ]
+
+      for (const hostingerConfig of hostingerConfigs) {
+        try {
+          console.log(
+            `Trying Hostinger config: ${hostingerConfig.host}:${hostingerConfig.port}, secure: ${hostingerConfig.secure}`,
+          )
+
+          const transporter = nodemailer.createTransporter({
+            host: hostingerConfig.host,
+            port: hostingerConfig.port,
+            secure: hostingerConfig.secure,
+            auth: {
+              user: hostingerConfig.user,
+              pass: hostingerConfig.password,
+            },
+            tls: {
+              rejectUnauthorized: false,
+            },
+            connectionTimeout: 15000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+          })
+
+          // Test connection
+          await transporter.verify()
+          console.log(`Hostinger SMTP connection verified: ${hostingerConfig.host}:${hostingerConfig.port}`)
+
+          // Send email
+          const info = await transporter.sendMail({
+            from: `"${hostingerConfig.fromName}" <${hostingerConfig.user}>`,
+            to: emailData.to,
+            subject: emailData.subject,
+            html: emailData.html,
+          })
+
+          console.log(`Email sent successfully with Hostinger:`, info.messageId)
+          return {
+            success: true,
+            message: `Email sent successfully using Hostinger (${hostingerConfig.host}:${hostingerConfig.port})`,
+          }
+        } catch (configError) {
+          console.log(`Hostinger config ${hostingerConfig.host}:${hostingerConfig.port} failed:`, configError.message)
+          continue
+        }
+      }
+
+      // If all Hostinger configs failed
+      return {
+        success: false,
+        message: `All Hostinger SMTP configurations failed. Please check your email password and account settings.`,
+      }
+    }
+
+    // For non-Hostinger services (Gmail, etc.)
     const transporter = nodemailer.createTransporter({
       host: config.host,
       port: config.port,
@@ -77,90 +158,9 @@ async function sendEmailWithConfig(
       socketTimeout: 10000,
     })
 
-    // Verify connection configuration
-    try {
-      await transporter.verify()
-      console.log(`${serviceName} SMTP connection verified successfully`)
-    } catch (verifyError) {
-      console.error(`${serviceName} SMTP verification failed:`, verifyError)
-
-      // If this is the primary service and we're in auto mode, try fallback
-      if (serviceName.includes("Primary") && emailConfig.useService === "auto") {
-        console.log("Primary service failed, trying fallback Gmail service...")
-        return await sendEmailWithConfig(emailData, emailConfig.fallback, "Fallback (Gmail)")
-      }
-
-      // If this is Hostinger, try alternative settings
-      if (config.host === "smtp.hostinger.com") {
-        console.log("Trying alternative Hostinger SMTP settings...")
-
-        const alternativeConfigs = [
-          {
-            ...config,
-            host: "mail.hostinger.com",
-            port: 587,
-            secure: false,
-          },
-          {
-            ...config,
-            host: "smtp.hostinger.com",
-            port: 465,
-            secure: true,
-          },
-          {
-            ...config,
-            host: "mail.hostinger.com",
-            port: 465,
-            secure: true,
-          },
-        ]
-
-        for (const altConfig of alternativeConfigs) {
-          try {
-            const altTransporter = nodemailer.createTransporter({
-              host: altConfig.host,
-              port: altConfig.port,
-              secure: altConfig.secure,
-              auth: {
-                user: altConfig.user,
-                pass: altConfig.password,
-              },
-              tls: {
-                rejectUnauthorized: false,
-              },
-              connectionTimeout: 10000,
-              greetingTimeout: 5000,
-              socketTimeout: 10000,
-            })
-
-            await altTransporter.verify()
-            console.log(`Alternative Hostinger settings work: ${altConfig.host}:${altConfig.port}`)
-
-            // Use this working configuration
-            const info = await altTransporter.sendMail({
-              from: `"${config.fromName}" <${config.user}>`,
-              to: emailData.to,
-              subject: emailData.subject,
-              html: emailData.html,
-            })
-
-            console.log(`Email sent successfully with alternative settings:`, info.messageId)
-            return {
-              success: true,
-              message: `Email sent successfully using alternative ${serviceName} settings`,
-            }
-          } catch (altError) {
-            console.log(`Alternative config ${altConfig.host}:${altConfig.port} failed:`, altError.message)
-            continue
-          }
-        }
-      }
-
-      return {
-        success: false,
-        message: `${serviceName} SMTP verification failed: ${verifyError instanceof Error ? verifyError.message : "Unknown error"}`,
-      }
-    }
+    // Verify connection
+    await transporter.verify()
+    console.log(`${serviceName} SMTP connection verified successfully`)
 
     // Send the email
     const info = await transporter.sendMail({
@@ -178,12 +178,6 @@ async function sendEmailWithConfig(
     }
   } catch (error) {
     console.error(`Error sending email with ${serviceName}:`, error)
-
-    // If this is the primary service and we're in auto mode, try fallback
-    if (serviceName.includes("Primary") && emailConfig.useService === "auto") {
-      console.log("Primary service failed, trying fallback Gmail service...")
-      return await sendEmailWithConfig(emailData, emailConfig.fallback, "Fallback (Gmail)")
-    }
 
     return {
       success: false,
