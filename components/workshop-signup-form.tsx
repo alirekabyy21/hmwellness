@@ -104,7 +104,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
                 <div>
                   <h3 className="font-medium">Date</h3>
-                  <p className="text-muted-foreground">Friday, May 30th, 2024</p>
+                  <p className="text-muted-foreground">Friday, May 30th, 2025</p>
                 </div>
               </div>
 

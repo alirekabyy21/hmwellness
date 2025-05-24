@@ -17,7 +17,7 @@ export function WorkshopThankYou({ email }: WorkshopThankYouProps) {
       "Join Hagar Moharam for a transformative coaching workshop at Espaces - New Cairo. Payment instructions will be sent via WhatsApp.",
     )
     const location = encodeURIComponent("Espaces - New Cairo, 5th Settlement")
-    const dates = encodeURIComponent("20240530T190000/20240530T210000") // May 30th 2024, 7-9 PM
+    const dates = encodeURIComponent("20250530T190000/20250530T210000") // May 30th 2024, 7-9 PM
 
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${dates}`
     window.open(calendarUrl, "_blank")
@@ -59,7 +59,7 @@ export function WorkshopThankYou({ email }: WorkshopThankYouProps) {
               <h2 className="text-xl font-semibold text-primary mb-2">Workshop Details</h2>
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                 <p>
-                  <strong>Date:</strong> Friday, May 30th, 2024
+                  <strong>Date:</strong> Friday, May 30th, 2025
                 </p>
                 <p>
                   <strong>Time:</strong> 7:00 PM - 9:00 PM (2 hours)
