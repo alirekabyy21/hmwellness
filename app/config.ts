@@ -56,7 +56,7 @@ export const emailConfig = {
   primary: {
     service: "hostinger",
     host: "smtp.hostinger.com",
-    port: 587,
+    port: 465,
     secure: false,
     user: "hagar@hmwellness.site",
     password: process.env.EMAIL_PASSWORD || "",
@@ -67,7 +67,7 @@ export const emailConfig = {
   fallback: {
     service: "gmail",
     host: "smtp.gmail.com",
-    port: 587,
+    port: 465,
     secure: false,
     user: "hagarmoharam7@gmail.com",
     password: process.env.GMAIL_APP_PASSWORD || "",

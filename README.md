@@ -16,7 +16,7 @@ To set up email functionality:
 export const emailConfig = {
   service: "hostinger",
   host: "smtp.hostinger.com",
-  port: 587,
+  port: 465,
   secure: false,
   user: "hagar@hmwellness.co",
   password: "your-email-password", // Replace with your actual password

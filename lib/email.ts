@@ -66,13 +66,13 @@ async function sendEmailWithConfig(
         {
           ...config,
           host: "smtp.hostinger.com",
-          port: 587,
+          port: 465,
           secure: false,
         },
         {
           ...config,
           host: "mail.hostinger.com",
-          port: 587,
+          port: 465,
           secure: false,
         },
         {
