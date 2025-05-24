@@ -107,7 +107,7 @@ function generateConfirmationEmail(name: string): string {
             <li>We'll contact you on WhatsApp within 24 hours</li>
             <li>Payment details will be shared via WhatsApp</li>
             <li>Once payment is confirmed, you'll receive full workshop details</li>
-            <li>Location directions: <a href="https://www.google.com/maps/place/Espaces+-+New+Cairo/@30.0371272,31.4799947,17z/data=!3m1!4b1!4m6!3m5!1s0x14583f1ea331999f:0x9e03f8954b759f96!8m2!3d30.0371272!4d31.4821834!16s%2Fg%2F11j3047_0j?entry=ttu" target="_blank">Click here for Google Maps directions</a></li>
+            <li>Location directions: <a href="https://maps.app.goo.gl/2TYzBAH6LUoFbWwo6?g_st=com.google.maps.preview.copy" target="_blank">Click here for Google Maps directions</a></li>
           </ul>
           
           <div class="contact">

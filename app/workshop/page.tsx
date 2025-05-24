@@ -142,7 +142,7 @@ export default function WorkshopPage() {
                   </div>
                   <div className="w-full h-64 rounded-lg overflow-hidden">
                     <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3455.4971563394943!2d31.440047800000002!3d29.993878000000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14583d3ff4fccb3b%3A0x51f79c978c375f9d!2sEspaces%20-%205th%20Settlement!5e0!3m2!1sen!2seg!4v1748084300431!5m2!1sen!2seg"
+                      src="https://maps.app.goo.gl/2TYzBAH6LUoFbWwo6?g_st=com.google.maps.preview.copy"
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
