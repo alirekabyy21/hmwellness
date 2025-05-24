@@ -1,18 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 
-// Simple email configuration - all in one place for easy debugging
+// Email config from env variables (matching your .env)
 const EMAIL_CONFIG = {
-  host: "smtp.hostinger.com",
-  port: 465,
-  secure: true, // SSL
-  user: "hagar@hmwellness.site",
-  password: process.env.EMAIL_PASSWORD || "",
+  host: process.env.EMAIL_SERVER_HOST || "smtp.hostinger.com",
+  port: Number(process.env.EMAIL_SERVER_PORT) || 465,
+  secure: true, // SSL on port 465
+  user: process.env.EMAIL_SERVER_USER || "",
+  password: process.env.EMAIL_SERVER_PASSWORD || "",
   fromName: "HM Wellness",
-  adminEmail: "hagar@hmwellness.site",
+  adminEmail: process.env.EMAIL_SERVER_USER || "hagar@hmwellness.site",
 }
 
-// Simple email sending function
+// Send email function
 async function sendEmail(to: string, subject: string, html: string): Promise<{ success: boolean; message: string }> {
   try {
     console.log(`📧 Sending email to: ${to}`)
@@ -20,11 +20,11 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
     console.log(`📧 Using: ${EMAIL_CONFIG.host}:${EMAIL_CONFIG.port}`)
 
     if (!EMAIL_CONFIG.password) {
-      console.error("❌ EMAIL_PASSWORD environment variable not set")
+      console.error("❌ EMAIL_SERVER_PASSWORD environment variable not set")
       return { success: false, message: "Email configuration missing" }
     }
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: EMAIL_CONFIG.host,
       port: EMAIL_CONFIG.port,
       secure: EMAIL_CONFIG.secure,
@@ -44,9 +44,9 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
     // Send email
     const info = await transporter.sendMail({
       from: `"${EMAIL_CONFIG.fromName}" <${EMAIL_CONFIG.user}>`,
-      to: to,
-      subject: subject,
-      html: html,
+      to,
+      subject,
+      html,
     })
 
     console.log("✅ Email sent successfully:", info.messageId)
@@ -60,7 +60,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
   }
 }
 
-// Generate participant confirmation email
+// Participant confirmation email HTML generator
 function generateConfirmationEmail(name: string): string {
   return `
     <!DOCTYPE html>
@@ -87,9 +87,7 @@ function generateConfirmationEmail(name: string): string {
         </div>
         <div class="content">
           <p>Hello <strong>${name}</strong>,</p>
-          
           <p>Thank you for registering for our <strong>Transformative Coaching Workshop</strong>! We're excited to have you join us.</p>
-          
           <div class="highlight">
             <h2>📅 Workshop Details</h2>
             <ul>
@@ -99,7 +97,6 @@ function generateConfirmationEmail(name: string): string {
               <li><strong>Group Size:</strong> Limited to 20 participants</li>
             </ul>
           </div>
-          
           <h2>📋 What's Next?</h2>
           <p>We'll send you a detailed email later this week with:</p>
           <ul>
@@ -109,21 +106,16 @@ function generateConfirmationEmail(name: string): string {
             <li>Parking information</li>
             <li>Pre-workshop preparation materials</li>
           </ul>
-          
           <div class="contact">
             <h2>💬 Questions?</h2>
             <p>If you have any questions before the workshop, feel free to contact us:</p>
             <ul>
               <li><strong>WhatsApp:</strong> +20 1090250475</li>
-              <li><strong>Email:</strong> hagar@hmwellness.site</li>
+              <li><strong>Email:</strong> ${EMAIL_CONFIG.user}</li>
             </ul>
           </div>
-          
           <p>We can't wait to see you at the workshop and support you on your transformation journey!</p>
-          
-          <p>Best regards,<br>
-          <strong>Hagar Moharam</strong><br>
-          HM Wellness</p>
+          <p>Best regards,<br><strong>Hagar Moharam</strong><br>HM Wellness</p>
         </div>
         <div class="footer">
           <p>© ${new Date().getFullYear()} HM Wellness | hmwellness.site</p>
@@ -134,7 +126,7 @@ function generateConfirmationEmail(name: string): string {
   `
 }
 
-// Generate admin notification email
+// Admin notification email HTML generator
 function generateAdminEmail(data: { name: string; email: string; phone: string; expectations?: string }): string {
   return `
     <!DOCTYPE html>
@@ -158,7 +150,6 @@ function generateAdminEmail(data: { name: string; email: string; phone: string; 
         </div>
         <div class="content">
           <p>A new participant has registered for the Transformative Coaching Workshop.</p>
-          
           <div class="participant-info">
             <h2>👤 Participant Details</h2>
             <p><span class="label">Name:</span> ${data.name}</p>
@@ -166,7 +157,6 @@ function generateAdminEmail(data: { name: string; email: string; phone: string; 
             <p><span class="label">Phone:</span> ${data.phone}</p>
             ${data.expectations ? `<p><span class="label">Expectations:</span><br>${data.expectations}</p>` : ""}
           </div>
-          
           <p>The participant has been sent a confirmation email automatically.</p>
         </div>
         <div class="footer">
