@@ -24,7 +24,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
       return { success: false, message: "Email configuration missing" }
     }
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: EMAIL_CONFIG.host,
       port: EMAIL_CONFIG.port,
       secure: EMAIL_CONFIG.secure,
@@ -93,26 +93,26 @@ function generateConfirmationEmail(name: string): string {
           <div class="highlight">
             <h2>📅 Workshop Details</h2>
             <ul>
-              <li><strong>Date:</strong> Next Friday</li>
-              <li><strong>Duration:</strong> 3 hours</li>
-              <li><strong>Location:</strong> New Cairo</li>
-              <li><strong>Group Size:</strong> Limited to 20 participants</li>
+              <li><strong>Date:</strong> Friday, May 30th, 2024</li>
+              <li><strong>Time:</strong> 7:00 PM - 9:00 PM (2 hours)</li>
+              <li><strong>Location:</strong> Espaces - New Cairo, 5th Settlement</li>
+              <li><strong>Group Size:</strong> Limited to 40 participants</li>
+              <li><strong>Investment:</strong> 500 EGP</li>
             </ul>
           </div>
           
           <h2>📋 What's Next?</h2>
-          <p>We'll send you a detailed email later this week with:</p>
+          <p>To complete your registration:</p>
           <ul>
-            <li>Exact workshop location and directions</li>
-            <li>Start and end times</li>
-            <li>What to bring</li>
-            <li>Parking information</li>
-            <li>Pre-workshop preparation materials</li>
+            <li>We'll contact you on WhatsApp within 24 hours</li>
+            <li>Payment details will be shared via WhatsApp</li>
+            <li>Once payment is confirmed, you'll receive full workshop details</li>
+            <li>Exact location details and parking information will be provided</li>
           </ul>
           
           <div class="contact">
             <h2>💬 Questions?</h2>
-            <p>If you have any questions before the workshop, feel free to contact us:</p>
+            <p>If you have any questions, feel free to contact us:</p>
             <ul>
               <li><strong>WhatsApp:</strong> +20 1090250475</li>
               <li><strong>Email:</strong> hagar@hmwellness.site</li>
@@ -135,7 +135,13 @@ function generateConfirmationEmail(name: string): string {
 }
 
 // Generate admin notification email
-function generateAdminEmail(data: { name: string; email: string; phone: string; expectations?: string }): string {
+function generateAdminEmail(data: {
+  name: string
+  email: string
+  phone: string
+  whatsapp: string
+  expectations?: string
+}): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -164,8 +170,11 @@ function generateAdminEmail(data: { name: string; email: string; phone: string; 
             <p><span class="label">Name:</span> ${data.name}</p>
             <p><span class="label">Email:</span> ${data.email}</p>
             <p><span class="label">Phone:</span> ${data.phone}</p>
+            <p><span class="label">WhatsApp:</span> ${data.whatsapp}</p>
             ${data.expectations ? `<p><span class="label">Expectations:</span><br>${data.expectations}</p>` : ""}
           </div>
+          
+          <p><strong>Next Steps:</strong> Contact participant on WhatsApp to share payment details.</p>
           
           <p>The participant has been sent a confirmation email automatically.</p>
         </div>
@@ -183,12 +192,15 @@ export async function POST(request: NextRequest) {
     console.log("🚀 Workshop registration started")
 
     const data = await request.json()
-    const { name, email, phone, expectations } = data
+    const { name, email, phone, whatsapp, expectations } = data
 
     // Validate required fields
-    if (!name || !email || !phone) {
+    if (!name || !email || !phone || !whatsapp) {
       console.log("❌ Missing required fields")
-      return NextResponse.json({ success: false, message: "Name, email, and phone are required" }, { status: 400 })
+      return NextResponse.json(
+        { success: false, message: "Name, email, phone, and WhatsApp number are required" },
+        { status: 400 },
+      )
     }
 
     console.log(`📝 Registration for: ${name} (${email})`)
@@ -206,7 +218,7 @@ export async function POST(request: NextRequest) {
     const adminResult = await sendEmail(
       EMAIL_CONFIG.adminEmail,
       `New Workshop Registration: ${name}`,
-      generateAdminEmail({ name, email, phone, expectations }),
+      generateAdminEmail({ name, email, phone, whatsapp, expectations }),
     )
 
     // Log results
