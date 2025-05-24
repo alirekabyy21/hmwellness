@@ -18,6 +18,7 @@ const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string().min(8, { message: "Please enter a valid phone number" }),
+  whatsapp: z.string().min(8, { message: "Please enter a valid WhatsApp number" }),
   expectations: z.string().optional(),
 })
 
@@ -41,6 +42,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
       name: "",
       email: "",
       phone: "",
+      whatsapp: "",
       expectations: "",
     },
   })
@@ -102,7 +104,17 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
                 <div>
                   <h3 className="font-medium">Date</h3>
-                  <p className="text-muted-foreground">{workshopConfig.date}</p>
+                  <p className="text-muted-foreground">Friday, May 30th, 2024</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Time</h3>
+                  <p className="text-muted-foreground">7:00 PM - 9:00 PM (2 hours)</p>
                 </div>
               </div>
 
@@ -112,17 +124,15 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
                 <div>
                   <h3 className="font-medium">Location</h3>
-                  <p className="text-muted-foreground">{workshopConfig.location} (Exact location to be announced)</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <Clock className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Duration</h3>
-                  <p className="text-muted-foreground">{workshopConfig.duration} of immersive coaching</p>
+                  <p className="text-muted-foreground">Espaces - New Cairo</p>
+                  <a
+                    href="https://www.google.com/maps/place/Espaces+-+New+Cairo/@30.0371272,31.4799947,17z/data=!3m1!4b1!4m6!3m5!1s0x14583f1ea331999f:0x9e03f8954b759f96!8m2!3d30.0371272!4d31.4821834!16s%2Fg%2F11j3047_0j?entry=ttu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline text-sm"
+                  >
+                    📍 Click here for Google Maps directions
+                  </a>
                 </div>
               </div>
 
@@ -132,15 +142,36 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
                 <div>
                   <h3 className="font-medium">Participants</h3>
-                  <p className="text-muted-foreground">Limited to {workshopConfig.maxParticipants} participants</p>
+                  <p className="text-muted-foreground">Limited to 40 participants</p>
                 </div>
               </div>
 
-              <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
-                <AlertDescription>
-                  Full details including exact location, time, and what to bring will be sent to registered participants
-                  later this week.
-                </AlertDescription>
+              <div className="flex items-start gap-3">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                  >
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium">Price</h3>
+                  <p className="text-muted-foreground">500 EGP</p>
+                </div>
+              </div>
+
+              <Alert className="bg-green-50 border-green-200 text-green-800">
+                <AlertDescription>Payment instructions will be sent via email after registration.</AlertDescription>
               </Alert>
             </CardContent>
           </Card>
@@ -177,7 +208,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">Full Name *</Label>
                   <Input
                     id="name"
                     placeholder="Enter your full name"
@@ -188,7 +219,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">Email Address *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -200,7 +231,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
                     id="phone"
                     placeholder="Enter your phone number"
@@ -208,6 +239,17 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                     className="border-primary/20 focus-visible:ring-primary"
                   />
                   {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp">WhatsApp Number *</Label>
+                  <Input
+                    id="whatsapp"
+                    placeholder="Enter your WhatsApp number"
+                    {...register("whatsapp")}
+                    className="border-primary/20 focus-visible:ring-primary"
+                  />
+                  {errors.whatsapp && <p className="text-sm text-red-500">{errors.whatsapp.message}</p>}
                 </div>
 
                 <div className="space-y-2">

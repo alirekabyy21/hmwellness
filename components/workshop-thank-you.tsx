@@ -11,13 +11,13 @@ interface WorkshopThankYouProps {
 
 export function WorkshopThankYou({ email }: WorkshopThankYouProps) {
   const handleAddToCalendar = () => {
-    // Create Google Calendar link (this is a simplified version)
+    // Create Google Calendar link
     const title = encodeURIComponent("Transformative Coaching Workshop")
     const details = encodeURIComponent(
-      "Join Hagar Moharam for a transformative coaching workshop. Details will be sent via email.",
+      "Join Hagar Moharam for a transformative coaching workshop at Espaces - New Cairo. Payment instructions will be sent via WhatsApp.",
     )
-    const location = encodeURIComponent("New Cairo, Egypt")
-    const dates = encodeURIComponent("20240531T090000/20240531T120000") // Example date - adjust as needed
+    const location = encodeURIComponent("Espaces - New Cairo, 5th Settlement")
+    const dates = encodeURIComponent("20240530T190000/20240530T210000") // May 30th 2024, 7-9 PM
 
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${dates}`
     window.open(calendarUrl, "_blank")
@@ -56,6 +56,35 @@ export function WorkshopThankYou({ email }: WorkshopThankYouProps) {
         <CardContent className="p-6 md:p-8">
           <div className="space-y-6">
             <div>
+              <h2 className="text-xl font-semibold text-primary mb-2">Workshop Details</h2>
+              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                <p>
+                  <strong>Date:</strong> Friday, May 30th, 2024
+                </p>
+                <p>
+                  <strong>Time:</strong> 7:00 PM - 9:00 PM (2 hours)
+                </p>
+                <p>
+                  <strong>Location:</strong> Espaces - New Cairo, 5th Settlement
+                </p>
+                <p>
+                  <strong>Price:</strong> 500 EGP
+                </p>
+                <p>
+                  <strong>Directions:</strong>{" "}
+                  <a
+                    href="https://www.google.com/maps/place/Espaces+-+New+Cairo/@30.0371272,31.4799947,17z/data=!3m1!4b1!4m6!3m5!1s0x14583f1ea331999f:0x9e03f8954b759f96!8m2!3d30.0371272!4d31.4821834!16s%2Fg%2F11j3047_0j?entry=ttu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    📍 Click here for Google Maps directions
+                  </a>
+                </p>
+              </div>
+            </div>
+
+            <div>
               <h2 className="text-xl font-semibold text-primary mb-2">What's Next?</h2>
               <p className="text-gray-600">
                 We've sent a confirmation email to <strong>{email}</strong> with all the details. If you don't see it in
@@ -64,10 +93,10 @@ export function WorkshopThankYou({ email }: WorkshopThankYouProps) {
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-              <h3 className="font-medium mb-2">Important Information</h3>
+              <h3 className="font-medium mb-2">Payment Instructions</h3>
               <p>
-                We'll send you another email later this week with the exact location, time, and what to bring to the
-                workshop.
+                We'll contact you on WhatsApp within 24 hours to share payment details. Once payment is confirmed,
+                you'll receive full workshop confirmation.
               </p>
             </div>
 

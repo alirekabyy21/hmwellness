@@ -24,7 +24,7 @@ export async function sendEmail(emailData: EmailData): Promise<{ success: boolea
     }
 
     // Create transporter with Hostinger settings
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: emailConfig.host,
       port: emailConfig.port,
       secure: emailConfig.secure, // true for port 465
@@ -107,21 +107,25 @@ export function generateWorkshopConfirmationEmail(data: {
           </div>
           <div class="content">
             <p>Hello ${name},</p>
-            <p>Thank you for registering for our Transformative Coaching Workshop in New Cairo next Friday.</p>
-            
+            <p>Thank you for registering for our Transformative Coaching 2-hour workshop!</p>
+
             <div class="details">
-              <h3>What's Next?</h3>
-              <p>We'll send you an email later this week with all the details you need, including:</p>
+              <h3>Workshop Details</h3>
               <ul>
-                <li>Exact location in New Cairo</li>
-                <li>Workshop start and end times</li>
-                <li>What to bring</li>
-                <li>Parking information</li>
+                <li><strong>Date:</strong> Friday, May 30th, 2024</li>
+                <li><strong>Time:</strong> 7:00 PM to 9:00 PM (2 hours)</li>
+                <li><strong>Location:</strong> Espaces - New Cairo, 5th Settlement</li>
+                <li><strong>Price:</strong> 500 EGP</li>
               </ul>
             </div>
-            
+
             <div class="alert">
-              <p><strong>Important:</strong> If you have any questions before then, please don't hesitate to contact us at:</p>
+              <p><strong>Payment Instructions:</strong></p>
+              <p>Payment details and instructions will be sent to you via WhatsApp shortly. Please ensure your WhatsApp is active on the phone number you provided.</p>
+            </div>
+
+            <div class="alert">
+              <p><strong>Contact us:</strong></p>
               <ul>
                 <li>WhatsApp: +20 1090250475</li>
                 <li>Email: hagar@hmwellness.site</li>
@@ -178,6 +182,14 @@ export function generateAdminNotificationEmail(data: {
               <strong>Phone:</strong> ${phone}</p>
               
               ${expectations ? `<p><strong>Expectations:</strong> ${expectations}</p>` : ""}
+            </div>
+
+            <div class="details">
+              <h3>Workshop Details</h3>
+              <p><strong>Workshop:</strong> Transformative Coaching 2-hour workshop<br>
+              <strong>Date:</strong> Friday, May 30th, 2024<br>
+              <strong>Time:</strong> 7:00 PM to 9:00 PM<br>
+              <strong>Location:</strong> Espaces - New Cairo, 5th Settlement</p>
             </div>
             
             <p>You can contact this participant directly if needed.</p>
