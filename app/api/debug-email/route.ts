@@ -17,7 +17,7 @@ export async function GET() {
     errors: [],
   };
 
-  // Test 1: Basic configuration check
+  // Test 1: Basic configuration presence check
   debugInfo.tests.push({
     name: "Configuration Check",
     status: emailConfig.user && emailConfig.password ? "PASS" : "FAIL",
@@ -27,6 +27,13 @@ export async function GET() {
       envPasswordSet: !!process.env.EMAIL_PASSWORD,
     },
   });
+
+  if (!emailConfig.user || !emailConfig.password) {
+    debugInfo.errors.push({
+      error: "Email configuration is incomplete. Missing user or password.",
+    });
+    return NextResponse.json(debugInfo, { status: 400 });
+  }
 
   // Hostinger SMTP configuration variants to test
   const hostingerConfigs = [
@@ -56,4 +63,86 @@ export async function GET() {
     },
   ];
 
-  for (const config of hostingerCo
+  for (const config of hostingerConfigs) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
+        auth: {
+          user: emailConfig.user,
+          pass: emailConfig.password,
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000,
+        tls: {
+          rejectUnauthorized: false, // Set to true in production if you have valid certs
+        },
+      });
+
+      const startTime = Date.now();
+      await transporter.verify();
+      const endTime = Date.now();
+
+      debugInfo.tests.push({
+        name: config.name,
+        status: "PASS",
+        details: {
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
+          responseTimeMs: endTime - startTime,
+        },
+      });
+
+      // Optionally, send a test email here and log success/failure:
+      // Uncomment if you want to test sending as well:
+      /*
+      try {
+        const info = await transporter.sendMail({
+          from: `"${emailConfig.fromName}" <${emailConfig.user}>`,
+          to: emailConfig.adminEmail,
+          subject: `SMTP Test Email - ${config.name}`,
+          html: `<p>This is a test email sent using configuration: ${config.name}</p>`,
+        });
+        debugInfo.tests.push({
+          name: `${config.name} - Send Test`,
+          status: "PASS",
+          details: {
+            messageId: info.messageId,
+            response: info.response,
+          },
+        });
+        break; // Stop after first successful config
+      } catch (sendError) {
+        debugInfo.tests.push({
+          name: `${config.name} - Send Test`,
+          status: "FAIL",
+          details: {
+            error: sendError.message,
+            code: sendError.code,
+          },
+        });
+      }
+      */
+
+    } catch (error: any) {
+      debugInfo.tests.push({
+        name: config.name,
+        status: "FAIL",
+        details: {
+          error: error.message,
+          code: error.code,
+        },
+      });
+      debugInfo.errors.push({
+        config: config.name,
+        error: error.message,
+        code: error.code,
+      });
+    }
+  }
+
+  return NextResponse.json(debugInfo, { status: 200 });
+}
