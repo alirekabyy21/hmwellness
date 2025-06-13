@@ -30,39 +30,38 @@ export default function WorkshopPage() {
       [name]: value,
     }))
   }
-  try {
-    const response = await fetch("/api/workshop/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    })
-  
-    let result
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitStatus("idle")
+
     try {
-      result = await response.json() // ✅ try to parse JSON
-    } catch (jsonError) {
-      console.error("❌ Failed to parse JSON:", jsonError)
-      throw new Error("Server returned invalid response.")
-    }
-  
-    if (result.success) {
-      setSubmitStatus("success")
-      setMessage("Registration successful! Check your email for confirmation.")
-      setFormData({ name: "", email: "", phone: "", whatsapp: "", expectations: "" })
-    } else {
+      const response = await fetch("/api/workshop/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setSubmitStatus("success")
+        setMessage("Registration successful! Check your email for confirmation.")
+        setFormData({ name: "", email: "", phone: "", whatsapp: "", expectations: "" })
+      } else {
+        setSubmitStatus("error")
+        setMessage(result.message || "Registration failed. Please try again.")
+      }
+    } catch (error) {
       setSubmitStatus("error")
-      setMessage(result.message || "Registration failed. Please try again.")
+      setMessage("Network error. Please check your connection and try again.")
+    } finally {
+      setIsSubmitting(false)
     }
-  } catch (error) {
-    setSubmitStatus("error")
-    setMessage("Something went wrong. Please try again.")
-    console.error("🚨 Submission error:", error)
-  } finally {
-    setIsSubmitting(false)
   }
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
@@ -109,7 +108,7 @@ export default function WorkshopPage() {
                 <div className="flex items-center">
                   <Clock className="h-5 w-5 text-purple-600 mr-3" />
                   <div>
-                    <p className="font-medium">Saturday, June 21st, 2025</p>
+                    <p className="font-medium">Friday, May 30th, 2025</p>
                     <p className="text-sm text-gray-600">7:00 PM - 9:00 PM (2 hours)</p>
                   </div>
                 </div>
@@ -123,7 +122,7 @@ export default function WorkshopPage() {
                 <div className="flex items-center">
                   <Users className="h-5 w-5 text-purple-600 mr-3" />
                   <div>
-                    <p className="font-medium">Limited to 20 participants</p>
+                    <p className="font-medium">Limited to 40 participants</p>
                     <p className="text-sm text-gray-600">Small group for personalized attention</p>
                   </div>
                 </div>
