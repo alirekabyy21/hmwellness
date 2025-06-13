@@ -30,38 +30,39 @@ export default function WorkshopPage() {
       [name]: value,
     }))
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setSubmitStatus("idle")
-
+  try {
+    const response = await fetch("/api/workshop/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    })
+  
+    let result
     try {
-      const response = await fetch("/api/workshop/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setSubmitStatus("success")
-        setMessage("Registration successful! Check your email for confirmation.")
-        setFormData({ name: "", email: "", phone: "", whatsapp: "", expectations: "" })
-      } else {
-        setSubmitStatus("error")
-        setMessage(result.message || "Registration failed. Please try again.")
-      }
-    } catch (error) {
-      setSubmitStatus("error")
-      setMessage("Network error. Please check your connection and try again.")
-    } finally {
-      setIsSubmitting(false)
+      result = await response.json() // ✅ try to parse JSON
+    } catch (jsonError) {
+      console.error("❌ Failed to parse JSON:", jsonError)
+      throw new Error("Server returned invalid response.")
     }
+  
+    if (result.success) {
+      setSubmitStatus("success")
+      setMessage("Registration successful! Check your email for confirmation.")
+      setFormData({ name: "", email: "", phone: "", whatsapp: "", expectations: "" })
+    } else {
+      setSubmitStatus("error")
+      setMessage(result.message || "Registration failed. Please try again.")
+    }
+  } catch (error) {
+    setSubmitStatus("error")
+    setMessage("Something went wrong. Please try again.")
+    console.error("🚨 Submission error:", error)
+  } finally {
+    setIsSubmitting(false)
   }
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
