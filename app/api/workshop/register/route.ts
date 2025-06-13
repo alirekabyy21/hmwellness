@@ -93,10 +93,10 @@ function generateConfirmationEmail(name: string): string {
           <div class="highlight">
             <h2>📅 Workshop Details</h2>
             <ul>
-              <li><strong>Date:</strong> Friday, May 30th, 2025</li>
+              <li><strong>Date:</strong> Saturday, June 21st, 2025</li>
               <li><strong>Time:</strong> 7:00 PM - 9:00 PM (2 hours)</li>
               <li><strong>Location:</strong> Espaces - New Cairo, 5th Settlement</li>
-              <li><strong>Group Size:</strong> Limited to 40 participants</li>
+              <li><strong>Group Size:</strong> Limited to 20 participants</li>
               <li><strong>Price:</strong> 500 EGP</li>
             </ul>
           </div>

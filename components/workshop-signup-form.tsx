@@ -86,7 +86,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
         </div>
         <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-primary mb-4">{workshopConfig.title}</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl">
-          Join Hagar Moharam for an exclusive in-person workshop in New Cairo next Friday. Limited spots available!
+          Join Hagar Moharam for an exclusive in-person workshop in New Cairo. Limited spots available!
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
                 <div>
                   <h3 className="font-medium">Date</h3>
-                  <p className="text-muted-foreground">Friday, May 30th, 2025</p>
+                  <p className="text-muted-foreground">Saturday, June 21st, 2025</p>
                 </div>
               </div>
 
@@ -142,7 +142,7 @@ export function WorkshopSignupForm({ onSubmitSuccess }: WorkshopSignupFormProps)
                 </div>
                 <div>
                   <h3 className="font-medium">Participants</h3>
-                  <p className="text-muted-foreground">Limited to 40 participants</p>
+                  <p className="text-muted-foreground">Limited to 20 participants</p>
                 </div>
               </div>
 

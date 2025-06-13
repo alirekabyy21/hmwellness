@@ -59,7 +59,7 @@ export function WorkshopThankYou({ email }: WorkshopThankYouProps) {
               <h2 className="text-xl font-semibold text-primary mb-2">Workshop Details</h2>
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                 <p>
-                  <strong>Date:</strong> Friday, May 30th, 2025
+                  <strong>Date:</strong> Saturday, June 21st, 2025
                 </p>
                 <p>
                   <strong>Time:</strong> 7:00 PM - 9:00 PM (2 hours)

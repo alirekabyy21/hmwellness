@@ -112,7 +112,7 @@ export function generateWorkshopConfirmationEmail(data: {
             <div class="details">
               <h3>Workshop Details</h3>
               <ul>
-                <li><strong>Date:</strong> Friday, May 30th, 2025</li>
+                <li><strong>Date:</strong> Saturday, June 21st, 2025</li>
                 <li><strong>Time:</strong> 7:00 PM to 9:00 PM (2 hours)</li>
                 <li><strong>Location:</strong> Espaces - New Cairo, 5th Settlement</li>
                 <li><strong>Price:</strong> 500 EGP</li>
@@ -187,7 +187,7 @@ export function generateAdminNotificationEmail(data: {
             <div class="details">
               <h3>Workshop Details</h3>
               <p><strong>Workshop:</strong> Transformative Coaching 2-hour workshop<br>
-              <strong>Date:</strong> Friday, May 30th, 2025<br>
+              <strong>Date:</strong> Saturday, June 21st, 2025<br>
               <strong>Time:</strong> 7:00 PM to 9:00 PM<br>
               <strong>Location:</strong> Espaces - New Cairo, 5th Settlement</p>
             </div>
