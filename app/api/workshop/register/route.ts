@@ -13,6 +13,21 @@ const EMAIL_CONFIG = {
 };
 
 // --- Utilities ---
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("Operation timed out")), timeoutMs);
+    promise
+      .then((result) => {
+        clearTimeout(timeout);
+        resolve(result);
+      })
+      .catch((err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+  });
+}
+
 async function sendEmail(to: string, subject: string, html: string): Promise<{ success: boolean; message: string }> {
   if (!EMAIL_CONFIG.password) {
     console.error("❌ EMAIL_SERVER_PASSWORD not set.");
@@ -173,39 +188,45 @@ export async function POST(request: NextRequest) {
     data = await request.json();
   } catch (err) {
     console.error("❌ Invalid JSON format:", err);
-    return NextResponse.json({ success: false, message: "Invalid request body." }, { status: 400 });
+    return new NextResponse(
+      JSON.stringify({ success: false, message: "Invalid request body." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const { name, email, phone, whatsapp, expectations } = data;
   if (!name || !email || !phone || !whatsapp) {
-    return NextResponse.json({ success: false, message: "Missing required fields." }, { status: 400 });
+    return new NextResponse(
+      JSON.stringify({ success: false, message: "Missing required fields." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   try {
-    // Participant email
-    const confirmation = await sendEmail(
-      email,
-      "Workshop Registration Confirmed - HM Wellness",
-      renderConfirmationEmail(name)
+    const confirmation = await withTimeout(
+      sendEmail(email, "Workshop Registration Confirmed - HM Wellness", renderConfirmationEmail(name)),
+      10000
     );
     if (!confirmation.success) throw new Error(confirmation.message);
 
-    // Admin notification
-    await sendEmail(
-      EMAIL_CONFIG.adminEmail,
-      `New Workshop Registration: ${name}`,
-      renderAdminEmail({ name, email, phone, whatsapp, expectations })
+    await withTimeout(
+      sendEmail(EMAIL_CONFIG.adminEmail, `New Workshop Registration: ${name}`, renderAdminEmail({ name, email, phone, whatsapp, expectations })),
+      10000
     );
 
-    return NextResponse.json({
-      success: true,
-      message: "Registration successful. Confirmation email sent.",
-    });
+    return new NextResponse(
+      JSON.stringify({ success: true, message: "Registration successful. Confirmation email sent." }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("💥 Error during registration:", error);
-    return NextResponse.json(
-      { success: false, message: "Registration failed.", error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({
+        success: false,
+        message: "Registration failed.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
