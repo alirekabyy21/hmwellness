@@ -189,68 +189,77 @@ function generateAdminEmail(data: {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("🚀 Workshop registration started")
+    console.log("🚀 Workshop registration started");
 
-    const data = await request.json()
-    const { name, email, phone, whatsapp, expectations } = data
+    // Try to parse JSON safely
+    let data;
+    try {
+      data = await request.json();
+    } catch (error) {
+      console.error("❌ Invalid JSON in request body:", error);
+      return NextResponse.json(
+        { success: false, message: "Invalid request format." },
+        { status: 400 }
+      );
+    }
+
+    const { name, email, phone, whatsapp, expectations } = data;
 
     // Validate required fields
     if (!name || !email || !phone || !whatsapp) {
-      console.log("❌ Missing required fields")
+      console.log("❌ Missing required fields");
       return NextResponse.json(
         { success: false, message: "Name, email, phone, and WhatsApp number are required" },
-        { status: 400 },
-      )
+        { status: 400 }
+      );
     }
 
-    console.log(`📝 Registration for: ${name} (${email})`)
+    console.log(`📝 Registration for: ${name} (${email})`);
 
     // Send confirmation email to participant
-    console.log("📧 Sending confirmation email to participant...")
-    const participantResult = await sendEmail(
-      email,
-      "Workshop Registration Confirmed - HM Wellness",
-      generateConfirmationEmail(name),
-    )
-
-    // Send notification email to admin
-    console.log("📧 Sending notification email to admin...")
-    const adminResult = await sendEmail(
-      EMAIL_CONFIG.adminEmail,
-      `New Workshop Registration: ${name}`,
-      generateAdminEmail({ name, email, phone, whatsapp, expectations }),
-    )
-
-    // Log results
-    console.log("📊 Results:")
-    console.log(`  Participant email: ${participantResult.success ? "✅" : "❌"} ${participantResult.message}`)
-    console.log(`  Admin email: ${adminResult.success ? "✅" : "❌"} ${adminResult.message}`)
-
-    // Return success if participant email was sent (admin email is optional)
-    if (participantResult.success) {
-      return NextResponse.json({
-        success: true,
-        message: "Registration successful! Check your email for confirmation.",
-      })
-    } else {
+    console.log("📧 Sending confirmation email to participant...");
+    let participantResult;
+    try {
+      participantResult = await sendEmail(
+        email,
+        "Workshop Registration Confirmed - HM Wellness",
+        generateConfirmationEmail(name)
+      );
+    } catch (error) {
+      console.error("❌ Failed to send participant email:", error);
       return NextResponse.json(
-        {
-          success: false,
-          message: "Registration received, but there was an issue sending the confirmation email.",
-          error: participantResult.message,
-        },
-        { status: 500 },
-      )
+        { success: false, message: "Could not send confirmation email." },
+        { status: 500 }
+      );
     }
+
+    // Send admin notification email (optional)
+    try {
+      console.log("📧 Sending notification email to admin...");
+      await sendEmail(
+        EMAIL_CONFIG.adminEmail,
+        `New Workshop Registration: ${name}`,
+        generateAdminEmail({ name, email, phone, whatsapp, expectations })
+      );
+    } catch (error) {
+      console.warn("⚠️ Failed to send admin email:", error);
+      // Continue anyway, admin email is optional
+    }
+
+    // Return JSON response to frontend
+    return NextResponse.json({
+      success: true,
+      message: "Registration successful! Check your email for confirmation.",
+    });
   } catch (error) {
-    console.error("💥 Workshop registration error:", error)
+    console.error("💥 Workshop registration error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "An error occurred during registration.",
+        message: "An unexpected error occurred during registration.",
         error: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
-    )
+      { status: 500 }
+    );
   }
 }
