@@ -47,9 +47,9 @@ export default function WorkshopPage() {
 
       const result = await response.json()
 
-      if (result.success) {
+      if (response.ok && result.message) {
         setSubmitStatus("success")
-        setMessage("Registration successful! Check your email for confirmation.")
+        setMessage(result.message || "Registration successful! Check your email for confirmation.")
         setFormData({ name: "", email: "", phone: "", whatsapp: "", expectations: "" })
       } else {
         setSubmitStatus("error")
@@ -89,13 +89,12 @@ export default function WorkshopPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Workshop Info - Show first on mobile */}
+          {/* Workshop Info */}
           <div className="space-y-8 order-1 lg:order-1">
             <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-4">Transformative Coaching Workshop</h2>
               <p className="text-xl text-gray-600 mb-6">
-                Join us for an intensive 2-hour workshop designed to help you discover your potential and create lasting
-                change in your life.
+                Join us for an intensive 2-hour workshop designed to help you discover your potential and create lasting change in your life.
               </p>
             </div>
 
@@ -108,7 +107,7 @@ export default function WorkshopPage() {
                 <div className="flex items-center">
                   <Clock className="h-5 w-5 text-purple-600 mr-3" />
                   <div>
-                    <p className="font-medium">Friday, May 30th, 2025</p>
+                    <p className="font-medium">Saturday, June 21st, 2025</p>
                     <p className="text-sm text-gray-600">7:00 PM - 9:00 PM (2 hours)</p>
                   </div>
                 </div>
@@ -122,7 +121,7 @@ export default function WorkshopPage() {
                 <div className="flex items-center">
                   <Users className="h-5 w-5 text-purple-600 mr-3" />
                   <div>
-                    <p className="font-medium">Limited to 40 participants</p>
+                    <p className="font-medium">Limited to 20 participants</p>
                     <p className="text-sm text-gray-600">Small group for personalized attention</p>
                   </div>
                 </div>
@@ -194,7 +193,7 @@ export default function WorkshopPage() {
             </Card>
           </div>
 
-          {/* Registration Form - Show second on mobile */}
+          {/* Registration Form */}
           <div className="lg:sticky lg:top-8 order-2 lg:order-2">
             <Card>
               <CardHeader>
